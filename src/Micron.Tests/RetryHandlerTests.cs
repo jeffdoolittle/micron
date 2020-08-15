@@ -16,10 +16,34 @@ namespace Micron.Tests
     public class RetryHandlerTests
     {
         [Fact]
-        public async Task Test1()
+        public async Task Can_create_a_simple_retry_handler()
         {
             var handler = new RetryHandler(5, 1000, ex => true);
             await handler.Execute(() => Task.CompletedTask);
+        }
+
+        [Fact]
+        public void Throw_exception_when_retry_count_exceeds_max()
+        {
+            var handler = new RetryHandler(6, 1000, ex => true);
+        }
+
+        [Fact]
+        public void Throw_exception_when_retry_count_deceeds_min()
+        {
+            var handler = new RetryHandler(0, 1000, ex => true);
+        }
+
+        [Fact]
+        public void Throw_exception_when_backoff_interval_exceeds_max()
+        {
+            var handler = new RetryHandler(1, 249, ex => true);
+        }
+
+        [Fact]
+        public void Throw_exception_when_backoff_interval_deceeds_min()
+        {
+            var handler = new RetryHandler(1, 300001, ex => true);
         }
     }
 }
