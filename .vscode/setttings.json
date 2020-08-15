@@ -1,0 +1,11 @@
+{
+    "name": "Micron",
+    "license-header-manager.additionalCommentStyles": [
+        {
+            "extension": ".cs",
+            "commentStart": " /*",
+            "commentMiddle": " * ",
+            "commentEnd": " */"
+        }
+    ]
+}
