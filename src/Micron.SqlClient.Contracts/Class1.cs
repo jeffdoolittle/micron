@@ -7,11 +7,14 @@
  *  Licensed under the BSD 3-Clause License. See LICENSE in project root folder for full license text.
  */
 
-using System;
-
-namespace Micron.SqlClient.Contracts
+namespace Micron.SqlClient
 {
-    public class Class1
+    using System;
+    using System.Data.Common;
+    using System.Threading.Tasks;
+
+    public interface IResultMapper
     {
+        Task Map(Func<DbDataReader, Exception, Task> mapper);
     }
 }
