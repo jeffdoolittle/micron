@@ -3,18 +3,20 @@ namespace Micron.SqlClient
     using System;
     using System.Threading.Tasks;
 
+    public delegate int IntervalCalculation(int attempt);
+
     public struct BackoffInterval
     {
         public const int MaxBackoffMilliseconds = 30000;
         public const int MinBackoffMilliseconds = 50;
 
-        private readonly Func<int, int> intervalCalculation;
+        private readonly IntervalCalculation intervalCalculation;
 
         public BackoffInterval(TimeSpan interval) : this(_ => (int)interval.TotalMilliseconds) { }
 
         public BackoffInterval(int intervalMilliseconds) : this(_ => intervalMilliseconds) { }
 
-        public BackoffInterval(Func<int, int> intervalCalculation)
+        public BackoffInterval(IntervalCalculation intervalCalculation)
         {
             for (var i = 0; i < RetryTimes.MaxRetries; i++)
             {
@@ -58,7 +60,7 @@ namespace Micron.SqlClient
         public static implicit operator BackoffInterval(int intervalMilliseconds)
             => new BackoffInterval(intervalMilliseconds);
 
-        public static implicit operator BackoffInterval(Func<int, int> intervalCalculation)
+        public static implicit operator BackoffInterval(IntervalCalculation intervalCalculation)
             => new BackoffInterval(intervalCalculation);
     }
 }

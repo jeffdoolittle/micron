@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-
+    <LangVersion>preview</LangVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Micron.SqlClient\Micron.SqlClient.csproj" />
+    <ProjectReference Include="..\Micron.SqlClient.Sqlite\Micron.SqlClient.Sqlite.csproj" />
   </ItemGroup>
 
 </Project>
