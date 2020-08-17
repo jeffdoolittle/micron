@@ -15,9 +15,7 @@ namespace Micron.SqlClient.Retry
                     .Interval(attempt => attempt * attempt * 50));
 
             Assert.Equal(5, configuration.RetryTimes);
-            Assert.True(configuration.Condition(new ArgumentException()));
-            Assert.False(configuration.Condition(new ArgumentNullException()));
-            Assert.False(configuration.Condition(new Exception()));
+            Assert.True(configuration.Condition(new ArgumentNullException()));
         }
     }
 }
