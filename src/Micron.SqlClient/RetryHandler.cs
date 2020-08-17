@@ -10,6 +10,13 @@ namespace Micron.SqlClient
         private readonly BackoffInterval backoffInterval;
         private readonly Func<Exception, bool>[] conditions;
 
+        public RetryHandler(params Func<Exception, bool>[] conditions)
+        {
+            this.retryTimes = RetryTimes.MaxRetries;
+            this.backoffInterval = BackoffInterval.MinBackoffMilliseconds;
+            this.conditions = conditions;
+        }
+
         public RetryHandler(RetryTimes retryTimes, BackoffInterval backoffInterval,
             params Func<Exception, bool>[] conditions)
         {

@@ -45,7 +45,7 @@ namespace Micron.Tests
                 return Task.CompletedTask;
             }
 
-            var handler = new RetryHandler(5, 1000, ex => true);
+            var handler = new RetryHandler(RetryTimes.MaxRetries, 1000, ex => true);
             await handler.Execute(exec);
 
             Assert.Equal(1, count);
@@ -69,11 +69,52 @@ namespace Micron.Tests
                 return Task.CompletedTask;
             }
 
-            var handler = new RetryHandler(5, 
+            var handler = new RetryHandler(RetryTimes.MaxRetries,
                 BackoffInterval.MinBackoffMilliseconds, ex => true);
             await handler.Execute(exec);
 
             Assert.Equal(5, tries);
+        }
+
+        [Fact]
+        public async Task Can_retry_for_specified_exception_types()
+        {
+            static bool canHandle(Exception ex) => ex is InvalidOperationException;
+
+            var tries = 0;
+            Task exec()
+            {
+                tries++;
+
+                if (tries < RetryTimes.MaxRetries)
+                {
+                    throw new InvalidOperationException();
+                }
+                return Task.CompletedTask;
+            }
+
+            var handler = new RetryHandler(canHandle);
+            await handler.Execute(exec);
+
+            Assert.Equal(5, tries);
+        }
+
+        [Fact]
+        public async Task Should_not_retry_for_unhandled_exception_types()
+        {
+            static bool canHandle(Exception ex) => ex is InvalidOperationException;
+
+            var tries = 0;
+            Task exec()
+            {
+                tries++;
+                throw new Exception();
+            }
+
+            var handler = new RetryHandler(canHandle);
+            _ = await Assert.ThrowsAsync<Exception>(() => handler.Execute(exec));
+
+            Assert.Equal(1, tries);
         }
     }
 }

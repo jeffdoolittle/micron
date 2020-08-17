@@ -18,12 +18,12 @@ namespace Micron.SqlClient
         {
             for (var i = 0; i < RetryTimes.MaxRetries; i++)
             {
-                var interval = intervalCalculation(i);
+                var interval = intervalCalculation(i + 1);
                 if (interval < MinBackoffMilliseconds)
                 {
                     throw new ArgumentOutOfRangeException(nameof(intervalCalculation), interval,
                         $"On retry count {i + 1} the calulated interval deceeded the minimum backoff " +
-                        $"interval of {MaxBackoffMilliseconds} milliseconds.");
+                        $"interval of {MinBackoffMilliseconds} milliseconds.");
                 }
                 if (interval > MaxBackoffMilliseconds)
                 {
