@@ -1,5 +1,5 @@
 /* 
- *  File: Class1.cs
+ *  File: BackoffInterval.cs
  *  
  *  Copyright © 2020 Jeff Doolittle.
  *  All rights reserved.

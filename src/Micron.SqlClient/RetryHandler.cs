@@ -1,5 +1,5 @@
 /* 
- *  File: Class1.cs
+ *  File: RetryHandler.cs
  *  
  *  Copyright © 2020 Jeff Doolittle.
  *  All rights reserved.
@@ -39,7 +39,7 @@ namespace Micron.SqlClient
                 }
                 catch (Exception ex)
                 {
-                    if (++tries > this.retryTimes.RetryCount)
+                    if (tries++ > this.retryTimes.RetryCount)
                     {
                         throw;
                     }

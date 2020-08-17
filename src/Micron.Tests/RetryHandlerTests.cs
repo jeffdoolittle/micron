@@ -1,5 +1,5 @@
-﻿/* 
- *  File: UnitTest1.cs
+/* 
+ *  File: RetryHandlerTests.cs
  *  
  *  Copyright © 2020 Jeff Doolittle.
  *  All rights reserved.
@@ -17,7 +17,7 @@ namespace Micron.Tests
     public class RetryHandlerTests
     {
         [Fact]
-        public async Task Can_create_a_simple_retry_handler()
+        public async Task Can_create_a_retry_handler()
         {
             var handler = new RetryHandler(5, 1000, ex => true);
             await handler.Execute(() => Task.CompletedTask);
@@ -42,5 +42,46 @@ namespace Micron.Tests
         public void Throw_exception_when_backoff_interval_deceeds_min() => _ =
              Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new RetryHandler(1, 300001, ex => true));
+
+        [Fact]
+        public async Task Can_execute_a_retry_handler_once()
+        {
+            var count = 0;
+
+            Task exec()
+            {
+                count++;
+                return Task.CompletedTask;
+            }
+
+            var handler = new RetryHandler(5, 1000, ex => true);
+            await handler.Execute(exec);
+
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public async Task Can_execute_a_retry_handler_max_times()
+        {
+            var tries = 0;
+            var max = RetryTimes.MaxRetries;
+
+            Task exec()
+            {
+                tries++;
+
+                if (tries < max)
+                {
+                    throw new Exception();
+                }
+
+                return Task.CompletedTask;
+            }
+
+            var handler = new RetryHandler(5, 1000, ex => true);
+            await handler.Execute(exec);
+
+            Assert.Equal(5, tries);
+        }
     }
 }
