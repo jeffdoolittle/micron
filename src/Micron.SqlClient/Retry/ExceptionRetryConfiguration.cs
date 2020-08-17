@@ -57,7 +57,7 @@ namespace Micron.SqlClient.Retry
             public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff)
             {
                 this.configuration.RetryTimes = times;
-                this.configuration.Backoff = backoff;
+                this.configuration.BackoffInterval = backoff;
                 return this.configuration;
             }
 
@@ -70,7 +70,7 @@ namespace Micron.SqlClient.Retry
 
             public IExceptionRetryConfiguration Interval(IntervalCalculation intervalCalculation)
             {
-                this.configuration.Backoff = intervalCalculation;
+                this.configuration.BackoffInterval = intervalCalculation;
                 return this.configuration;
             }
         }
@@ -81,7 +81,7 @@ namespace Micron.SqlClient.Retry
 
             public RetryTimes RetryTimes { get; set; }
 
-            public BackoffInterval Backoff { get; set; }
+            public BackoffInterval BackoffInterval { get; set; }
         }
     }
 
@@ -89,7 +89,7 @@ namespace Micron.SqlClient.Retry
     {
         Func<Exception, bool> Condition { get; }
         RetryTimes RetryTimes { get; }
-        BackoffInterval Backoff { get; }
+        BackoffInterval BackoffInterval { get; }
     }
 
     public interface IExceptionFilterExpression : IExceptionRetryExpression

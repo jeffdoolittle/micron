@@ -1,4 +1,4 @@
-namespace Micron.SqlClient
+﻿namespace Micron.SqlClient
 {
     using System;
     using System.Collections.Generic;
@@ -7,13 +7,13 @@ namespace Micron.SqlClient
     using System.Threading.Tasks;
     using Micron.SqlClient.Retry;
 
-    public class CommandFactory
+    public class SqlGateway : ISqlGateway
     {
         private Func<Task<DbConnection>> connectionFactory;
         private readonly List<IExceptionRetryConfiguration> retryConfigurations = 
             new List<IExceptionRetryConfiguration>();
 
-        public CommandFactory(Action<ICommandConfigurerRootExpression> configure)
+        public SqlGateway(Action<ISqlGatewayConfigurationRootExpression> configure)
         {
             var builder = new CommandConfigurationBuilder(this);
             configure(builder);
@@ -78,34 +78,41 @@ namespace Micron.SqlClient
         }
 
         private class CommandConfigurationBuilder :
-            ICommandConfigurerRootExpression,
-            ICommandConfigurerExceptionExpression
+            ISqlGatewayConfigurationRootExpression,
+            ISqlGatewayConfigurationExceptionExpression
         {
-            private readonly CommandFactory factory;
+            private readonly SqlGateway gateway;
 
-            public CommandConfigurationBuilder(CommandFactory factory)
-                => this.factory = factory;
+            public CommandConfigurationBuilder(SqlGateway gateway)
+                => this.gateway = gateway;
 
-            public ICommandConfigurerExceptionExpression Connection(Func<Task<DbConnection>> connectionFactory)
+            public ISqlGatewayConfigurationExceptionExpression Connection(Func<Task<DbConnection>> connectionFactory)
             {
-                this.factory.connectionFactory = connectionFactory;
+                this.gateway.connectionFactory = connectionFactory;
                 return this;
             }
 
-            public ICommandConfigurerExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression)
+            public ISqlGatewayConfigurationExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression)
             {
                 var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException());
-                this.factory.retryConfigurations.Add(exceptionRetryConfiguration);
+                this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
                 return this;
             }
 
-            public ICommandConfigurerExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null) where TException : Exception
+            public ISqlGatewayConfigurationExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null) where TException : Exception
             {
                 var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException<TException>());
-                this.factory.retryConfigurations.Add(exceptionRetryConfiguration);
+                this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
                 return this;
             }
         }
+    }
+
+    public interface ISqlGateway
+    {
+         Task Execute(params ICommand[] commands);
+         ValueTask<T> Scalar<T>(string commandText, params object[] parameters);
+         IAsyncEnumerable<T> Query<T>(IQuery<T> query);
     }
 
     public interface ICommand
@@ -122,16 +129,16 @@ namespace Micron.SqlClient
         Func<IDataReader, Task<T>> Map { get; }
     }
 
-    public interface ICommandConfigurerRootExpression
+    public interface ISqlGatewayConfigurationRootExpression
     {
-        ICommandConfigurerExceptionExpression Connection(Func<Task<DbConnection>> connectionFactory);
+        ISqlGatewayConfigurationExceptionExpression Connection(Func<Task<DbConnection>> connectionFactory);
     }
 
-    public interface ICommandConfigurerExceptionExpression
+    public interface ISqlGatewayConfigurationExceptionExpression
     {
-        ICommandConfigurerExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression);
+        ISqlGatewayConfigurationExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression);
 
-        ICommandConfigurerExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null)
+        ISqlGatewayConfigurationExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null)
             where TException : Exception;
     }
 }

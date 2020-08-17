@@ -116,13 +116,5 @@ namespace Micron.SqlClient.Retry
 
             Assert.Equal(1, tries);
         }
-
-        [Fact]
-        public async Task Can_configure_using_fluent_interface()
-        {
-            var retryConfiguration = ConfigureRetries
-                .OnException();
-
-        }
     }
 }

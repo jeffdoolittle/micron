@@ -55,13 +55,6 @@ namespace Micron.SqlClient
             await Task.Delay(interval).ConfigureAwait(true);
         }
 
-        public override bool Equals(object obj) => 
-            obj is BackoffInterval interval &&
-                EqualityComparer<IntervalCalculation>.Default.Equals(this.intervalCalculation, interval.intervalCalculation);
-
-        public override int GetHashCode() => 
-            HashCode.Combine(this.intervalCalculation);
-
         public static implicit operator BackoffInterval(TimeSpan interval)
             => new BackoffInterval(interval);
 
