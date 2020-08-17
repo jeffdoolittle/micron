@@ -1,6 +1,7 @@
 namespace Micron.SqlClient
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     public delegate int IntervalCalculation(int attempt);
@@ -53,6 +54,13 @@ namespace Micron.SqlClient
             var interval = this.intervalCalculation(retryCount);
             await Task.Delay(interval).ConfigureAwait(true);
         }
+
+        public override bool Equals(object obj) => 
+            obj is BackoffInterval interval &&
+                EqualityComparer<IntervalCalculation>.Default.Equals(this.intervalCalculation, interval.intervalCalculation);
+
+        public override int GetHashCode() => 
+            HashCode.Combine(this.intervalCalculation);
 
         public static implicit operator BackoffInterval(TimeSpan interval)
             => new BackoffInterval(interval);

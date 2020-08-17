@@ -19,6 +19,13 @@ namespace Micron.SqlClient
 
         public int RetryCount { get; }
 
+        public override bool Equals(object obj) => 
+            obj is RetryTimes times &&
+                this.RetryCount == times.RetryCount;
+
+        public override int GetHashCode() => 
+            HashCode.Combine(this.RetryCount);
+
         public static implicit operator RetryTimes(int retryCount) => new RetryTimes(retryCount);
     }
 }

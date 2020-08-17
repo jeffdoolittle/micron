@@ -1,7 +1,6 @@
-namespace Micron.Tests
+namespace Micron.SqlClient.Retry
 {
     using System.Threading.Tasks;
-    using Micron.SqlClient;
     using Xunit;
 
     public class BackoffIntervalTests
@@ -14,7 +13,7 @@ namespace Micron.Tests
             int calc(int attempt)
             {
                 callCount++;
-                return attempt * BackoffInterval.MinBackoffMilliseconds;
+                return attempt * attempt * BackoffInterval.MinBackoffMilliseconds;
             };
 
             var interval = new BackoffInterval(calc);

@@ -1,27 +1,9 @@
-namespace Micron.Tests
+namespace Micron.SqlClient.Retry
 {
     using System;
     using System.Threading.Tasks;
     using Micron.SqlClient;
     using Xunit;
-
-    public class CommandConfigurerTests
-    {
-        [Fact]
-        public void Can_do_stuff()
-        {
-            var factory = new CommandFactory(_ => _
-                .Connection(() => null)
-                .OnException<ArgumentException>(ex => ex
-                    .Retry(5, backoff => 
-                    backoff.Interval(attempt => (attempt ^ 2) * 50)
-                    )
-                )
-            );
-
-            
-        }
-    }
 
     public class RetryHandlerTests
     {
@@ -133,6 +115,14 @@ namespace Micron.Tests
             _ = await Assert.ThrowsAsync<Exception>(() => handler.Execute(exec));
 
             Assert.Equal(1, tries);
+        }
+
+        [Fact]
+        public async Task Can_configure_using_fluent_interface()
+        {
+            var retryConfiguration = ConfigureRetries
+                .OnException();
+
         }
     }
 }

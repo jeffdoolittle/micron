@@ -5,10 +5,13 @@ namespace Micron.SqlClient
     using System.Data;
     using System.Data.Common;
     using System.Threading.Tasks;
+    using Micron.SqlClient.Retry;
 
     public class CommandFactory
     {
         private Func<Task<DbConnection>> connectionFactory;
+        private readonly List<IExceptionRetryConfiguration> retryConfigurations = 
+            new List<IExceptionRetryConfiguration>();
 
         public CommandFactory(Action<ICommandConfigurerRootExpression> configure)
         {
@@ -89,13 +92,17 @@ namespace Micron.SqlClient
                 return this;
             }
 
-            public ICommandConfigurerExceptionExpression OnException(Action<IExceptionFilterExpression<Exception>> filter)
+            public ICommandConfigurerExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression)
             {
+                var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException());
+                this.factory.retryConfigurations.Add(exceptionRetryConfiguration);
                 return this;
             }
 
-            public ICommandConfigurerExceptionExpression OnException<TException>(Action<IExceptionFilterExpression<TException>> filter = null) where TException : Exception
+            public ICommandConfigurerExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null) where TException : Exception
             {
+                var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException<TException>());
+                this.factory.retryConfigurations.Add(exceptionRetryConfiguration);
                 return this;
             }
         }
@@ -122,31 +129,9 @@ namespace Micron.SqlClient
 
     public interface ICommandConfigurerExceptionExpression
     {
-        ICommandConfigurerExceptionExpression OnException(Action<IExceptionFilterExpression<Exception>> filter);
+        ICommandConfigurerExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression);
 
-        ICommandConfigurerExceptionExpression OnException<TException>(Action<IExceptionFilterExpression<TException>> filter = null)
+        ICommandConfigurerExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null)
             where TException : Exception;
-    }
-
-    public interface IExceptionFilterExpression<T> : IExceptionRetryExpression
-        where T : Exception
-    {
-        IExceptionRetryExpression Matching(Func<Exception, bool> condition);
-
-        IExceptionRetryExpression Matching<TException>(Func<TException, bool> condition)
-            where TException : Exception;
-    }
-
-    public interface IExceptionRetryExpression
-    {
-        ICommandConfigurerExceptionExpression Retry(RetryTimes times, BackoffInterval backoff);
-
-        ICommandConfigurerExceptionExpression Retry(RetryTimes times,
-            Action<IBackoffIntervalConfigurationExpression> configureBackoff);
-    }
-
-    public interface IBackoffIntervalConfigurationExpression
-    {
-        ICommandConfigurerExceptionExpression Interval(IntervalCalculation intervalCalculation);
     }
 }
