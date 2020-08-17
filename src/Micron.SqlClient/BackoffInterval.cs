@@ -1,12 +1,3 @@
-/* 
- *  File: BackoffInterval.cs
- *  
- *  Copyright © 2020 Jeff Doolittle.
- *  All rights reserved.
- *  
- *  Licensed under the BSD 3-Clause License. See LICENSE in project root folder for full license text.
- */
-
 namespace Micron.SqlClient
 {
     using System;
@@ -15,7 +6,7 @@ namespace Micron.SqlClient
     public struct BackoffInterval
     {
         public const int MaxBackoffMilliseconds = 30000;
-        public const int MinBackoffMilliseconds = 250;
+        public const int MinBackoffMilliseconds = 50;
 
         private readonly Func<int, int> intervalCalculation;
 

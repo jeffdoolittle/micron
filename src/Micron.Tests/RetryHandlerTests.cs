@@ -1,12 +1,3 @@
-/* 
- *  File: RetryHandlerTests.cs
- *  
- *  Copyright © 2020 Jeff Doolittle.
- *  All rights reserved.
- *  
- *  Licensed under the BSD 3-Clause License. See LICENSE in project root folder for full license text.
- */
-
 namespace Micron.Tests
 {
     using System;
@@ -26,7 +17,7 @@ namespace Micron.Tests
         [Fact]
         public void Throw_exception_when_retry_count_exceeds_max() => _ =
              Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new RetryHandler(6, 1000, ex => true));
+                new RetryHandler(RetryTimes.MaxRetries + 1, 1000, ex => true));
 
         [Fact]
         public void Throw_exception_when_retry_count_deceeds_min() => _ =
@@ -36,12 +27,12 @@ namespace Micron.Tests
         [Fact]
         public void Throw_exception_when_backoff_interval_exceeds_max() => _ =
              Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new RetryHandler(1, 249, ex => true));
+                new RetryHandler(1, BackoffInterval.MinBackoffMilliseconds - 1, ex => true));
 
         [Fact]
         public void Throw_exception_when_backoff_interval_deceeds_min() => _ =
              Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new RetryHandler(1, 300001, ex => true));
+                new RetryHandler(1, BackoffInterval.MaxBackoffMilliseconds + 1, ex => true));
 
         [Fact]
         public async Task Can_execute_a_retry_handler_once()
@@ -78,7 +69,8 @@ namespace Micron.Tests
                 return Task.CompletedTask;
             }
 
-            var handler = new RetryHandler(5, 1000, ex => true);
+            var handler = new RetryHandler(5, 
+                BackoffInterval.MinBackoffMilliseconds, ex => true);
             await handler.Execute(exec);
 
             Assert.Equal(5, tries);
