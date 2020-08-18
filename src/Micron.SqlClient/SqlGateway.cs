@@ -86,9 +86,10 @@
             public CommandConfigurationBuilder(SqlGateway gateway)
                 => this.gateway = gateway;
 
-            public ISqlGatewayConfigurationExceptionExpression Connection(Func<Task<DbConnection>> connectionFactory)
+            public ISqlGatewayConfigurationExceptionExpression Connection<TConnection>(Func<Task<TConnection>> connectionFactory)
+                where TConnection : DbConnection
             {
-                this.gateway.connectionFactory = connectionFactory;
+                this.gateway.connectionFactory = async () => await connectionFactory();
                 return this;
             }
 
@@ -131,7 +132,8 @@
 
     public interface ISqlGatewayConfigurationRootExpression
     {
-        ISqlGatewayConfigurationExceptionExpression Connection(Func<Task<DbConnection>> connectionFactory);
+        ISqlGatewayConfigurationExceptionExpression Connection<TConnection>(Func<Task<TConnection>> connectionFactory)
+            where TConnection : DbConnection;
     }
 
     public interface ISqlGatewayConfigurationExceptionExpression

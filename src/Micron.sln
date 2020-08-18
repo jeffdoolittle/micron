@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micron.Tests", "Micron.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micron.SqlClient.Sqlite", "Micron.SqlClient.Sqlite\Micron.SqlClient.Sqlite.csproj", "{D1B8598B-9313-4642-AE6E-7878CC498021}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micron.SqlClient.SqlServer", "Micron.SqlClient.SqlServer\Micron.SqlClient.SqlServer.csproj", "{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,5 +60,17 @@ Global
 		{D1B8598B-9313-4642-AE6E-7878CC498021}.Release|x64.Build.0 = Release|Any CPU
 		{D1B8598B-9313-4642-AE6E-7878CC498021}.Release|x86.ActiveCfg = Release|Any CPU
 		{D1B8598B-9313-4642-AE6E-7878CC498021}.Release|x86.Build.0 = Release|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Debug|x64.Build.0 = Debug|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Debug|x86.Build.0 = Debug|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Release|x64.ActiveCfg = Release|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Release|x64.Build.0 = Release|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Release|x86.ActiveCfg = Release|Any CPU
+		{94C3038A-D3E8-4F7A-B32E-28A3A874EF0B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

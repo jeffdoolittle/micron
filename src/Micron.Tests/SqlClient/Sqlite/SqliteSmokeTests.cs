@@ -6,7 +6,6 @@
 
     public class SqliteSmokeTests
     {
-
         [Fact]
         public async Task Can_open_an_sqlite_connect()
         {
