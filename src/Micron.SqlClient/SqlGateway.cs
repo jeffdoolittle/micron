@@ -138,9 +138,9 @@
 
     public interface ISqlGatewayConfigurationExceptionExpression
     {
-        ISqlGatewayConfigurationExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression);
+        IExceptionRetryExpression OnException(Func<Exception, bool> condition);
 
-        ISqlGatewayConfigurationExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null)
+        IExceptionRetryExpression OnException<TException>(Func<TException, bool> condition = null)
             where TException : Exception;
     }
 }

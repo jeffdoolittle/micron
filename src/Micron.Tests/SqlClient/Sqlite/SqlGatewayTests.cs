@@ -20,10 +20,18 @@
 
             var gateway = new SqlGateway(_ => _
                 .Connection(openConnection)
-                .OnException<ArgumentException>(ex => ex
-                    .Retry(5, backoff =>
-                        backoff.Interval(attempt => attempt * attempt * 50))
+                .OnException<ArgumentException>()
+                .Retry(5, backoff =>
+                    backoff.Interval(attempt => attempt * attempt * 50))
                 )
+            );
+
+            new SqlGateway(_ => _
+                .Connection(openConnection)
+                .OnException<ArgumentException>()
+                .Retry(5, backoff =>
+                    backoff.Interval(attempt => attempt * attempt * 50))
+                
             );
 
             var value = await gateway.Scalar<int>("select 1, count(*) from sqlite_master");

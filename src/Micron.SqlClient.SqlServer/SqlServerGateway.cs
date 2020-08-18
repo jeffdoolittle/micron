@@ -9,7 +9,7 @@
     {
         public SqlServerGateway()
         {
-            
+
         }
 
         public Task Execute(params ICommand[] commands)
@@ -26,5 +26,10 @@
         {
             throw new NotImplementedException();
         }
+    }
+
+    public class SqlServerExceptionRetryExtensions
+    {
+        
     }
 }

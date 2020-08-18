@@ -9,8 +9,7 @@ namespace Micron.SqlClient.Retry
         public void Can_configure_exception_retries()
         {
             var configuration = ConfigureRetries
-                .OnException<ArgumentNullException>()
-                .Matching(ex => true)
+                .OnException<ArgumentNullException>(ex => true)
                 .Retry(5, 50);
 
             Assert.Equal(5, configuration.RetryTimes);
@@ -25,7 +24,6 @@ namespace Micron.SqlClient.Retry
 
             var configuration = ConfigureRetries
                 .OnException<ArgumentNullException>()
-                .Matching(ex => true)
                 .Retry(5, calc);
 
             Assert.Equal(5, configuration.RetryTimes);
