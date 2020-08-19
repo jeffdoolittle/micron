@@ -1,7 +1,6 @@
-namespace Micron.SqlClient
+namespace Micron.SqlClient.Retry
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     public delegate int IntervalCalculation(int attempt);

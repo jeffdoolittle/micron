@@ -120,7 +120,7 @@ namespace Micron.SqlClient.Retry
         [Fact]
         public async Task Can_build_and_execute_with_fluent_interface()
         {
-            var handler = ConfigureRetries
+            var handler = RetryHandler
                 .OnException<ArgumentNullException>(ex => true)
                 .Retry(5, 50);
 
@@ -133,7 +133,7 @@ namespace Micron.SqlClient.Retry
             IntervalCalculation calc = attempt => attempt * attempt * 50;
             var interval = new BackoffInterval(calc);
 
-            var handler = ConfigureRetries
+            var handler = RetryHandler
                 .OnException<ArgumentNullException>()
                 .Retry(5, calc);
 

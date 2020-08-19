@@ -74,7 +74,7 @@
 
         public async IAsyncEnumerable<T> Query<T>(IQuery<T> query)
         {
-            IAsyncEnumerable<T> enumerable;
+            IAsyncEnumerable<T> enumerable = null;
 
             async IAsyncEnumerable<TValue> exec<TValue>(IQuery<TValue> query)
             {
@@ -88,21 +88,22 @@
                 await conn.CloseAsync();
             }
 
-            await this.retryHandler.Execute(() => {
+            await this.retryHandler.Execute(() =>
+            {
                 enumerable = exec(query);
                 return Task.CompletedTask;
             });
 
             await using var enumerator = enumerable.GetAsyncEnumerator();
-            for(var more = true; more;)
+            for (var more = true; more;)
             {
                 more = await enumerator.MoveNextAsync();
                 yield return enumerator.Current;
             }
-
         }
 
-        private static DbCommand BuildCommand(string commandText, object[] parameters, DbConnection conn, DbTransaction tran = null)
+        private static DbCommand BuildCommand(string commandText, object[] parameters,
+            DbConnection conn, DbTransaction tran = null)
         {
             var cmd = conn.CreateCommand();
             cmd.CommandText = commandText;
@@ -127,7 +128,7 @@
             ISqlGatewayConfigurationRetryExpression
         {
             private readonly SqlGateway gateway;
-            private IExceptionRetryExpression retryExpression;
+            private IRetryTimesExpression retryExpression;
 
             public CommandConfigurationBuilder(SqlGateway gateway)
                 => this.gateway = gateway;
@@ -142,7 +143,7 @@
             public ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null)
                 where TException : DbException
             {
-                this.retryExpression = ConfigureRetries.OnException(condition);
+                this.retryExpression = RetryHandler.OnException(condition);
                 return this;
             }
 
@@ -166,6 +167,7 @@
     {
         string CommandText { get; }
         object[] Parameters { get; }
+        int TimeoutSeconds { get; }
         int ExpectedAffectedRows { get; }
     }
 
@@ -194,6 +196,5 @@
 
         void Retry(RetryTimes times,
             Action<IBackoffIntervalExpression> configureBackoff);
-
     }
 }
