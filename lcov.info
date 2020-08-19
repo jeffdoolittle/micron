@@ -23,8 +23,8 @@ FN:58,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Impl
 FNDA:0,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Implicit(System.TimeSpan)
 DA:59,0
 FN:61,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Implicit(System.Int32)
-FNDA:0,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Implicit(System.Int32)
-DA:62,0
+FNDA:35,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Implicit(System.Int32)
+DA:62,35
 FN:64,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Implicit(Micron.SqlClient.IntervalCalculation)
 FNDA:0,Micron.SqlClient.BackoffInterval Micron.SqlClient.BackoffInterval::op_Implicit(Micron.SqlClient.IntervalCalculation)
 DA:65,0
@@ -32,119 +32,119 @@ FN:15,System.Void Micron.SqlClient.BackoffInterval::.ctor(System.TimeSpan)
 FNDA:0,System.Void Micron.SqlClient.BackoffInterval::.ctor(System.TimeSpan)
 DA:16,0
 FN:17,System.Void Micron.SqlClient.BackoffInterval::.ctor(System.Int32)
-FNDA:0,System.Void Micron.SqlClient.BackoffInterval::.ctor(System.Int32)
-DA:18,0
+FNDA:260,System.Void Micron.SqlClient.BackoffInterval::.ctor(System.Int32)
+DA:18,260
 FN:20,System.Void Micron.SqlClient.BackoffInterval::.ctor(Micron.SqlClient.IntervalCalculation)
-FNDA:0,System.Void Micron.SqlClient.BackoffInterval::.ctor(Micron.SqlClient.IntervalCalculation)
-DA:21,0
-DA:22,0
-DA:23,0
-DA:24,0
-DA:25,0
-DA:26,0
-DA:27,0
-DA:28,0
-DA:29,0
-DA:31,0
-DA:32,0
-DA:33,0
-DA:34,0
-DA:35,0
-DA:37,0
-DA:39,0
-DA:40,0
-BRDA:22,172,1,0
-BRDA:25,26,0,0
-BRDA:25,26,1,0
-BRDA:31,96,0,0
-BRDA:31,96,1,0
-BRDA:22,172,0,0
+FNDA:40,System.Void Micron.SqlClient.BackoffInterval::.ctor(Micron.SqlClient.IntervalCalculation)
+DA:21,40
+DA:22,380
+DA:23,160
+DA:24,160
+DA:25,160
+DA:26,5
+DA:27,5
+DA:28,5
+DA:29,5
+DA:31,155
+DA:32,5
+DA:33,5
+DA:34,5
+DA:35,5
+DA:37,150
+DA:39,30
+DA:40,30
+BRDA:22,298,1,160
+BRDA:25,68,0,5
+BRDA:25,68,1,155
+BRDA:31,173,0,5
+BRDA:31,173,1,150
+BRDA:22,298,0,30
 FN:46,System.Void Micron.SqlClient.BackoffInterval/<Backoff>d__6::MoveNext()
-FNDA:0,System.Void Micron.SqlClient.BackoffInterval/<Backoff>d__6::MoveNext()
-DA:47,0
-DA:48,0
+FNDA:65,System.Void Micron.SqlClient.BackoffInterval/<Backoff>d__6::MoveNext()
+DA:47,65
+DA:48,65
 DA:49,0
 DA:50,0
 DA:51,0
-DA:54,0
-DA:55,0
-DA:56,0
-BRDA:48,29,0,0
-BRDA:48,29,1,0
+DA:54,65
+DA:55,65
+DA:56,65
+BRDA:48,43,0,0
+BRDA:48,43,1,65
 LF:30
-LH:0
+LH:24
 BRF:8
-BRH:0
+BRH:7
 FNF:7
-FNH:0
+FNH:4
 end_of_record
 SF:/Users/jeff/projects/micron/src/Micron.SqlClient/Retry/RetryHandler.cs
 FN:12,System.Void Micron.SqlClient.RetryHandler::.ctor(System.Func`2<System.Exception,System.Boolean>[])
-FNDA:0,System.Void Micron.SqlClient.RetryHandler::.ctor(System.Func`2<System.Exception,System.Boolean>[])
-DA:13,0
-DA:14,0
-DA:15,0
-DA:16,0
-DA:17,0
-DA:18,0
+FNDA:10,System.Void Micron.SqlClient.RetryHandler::.ctor(System.Func`2<System.Exception,System.Boolean>[])
+DA:13,10
+DA:14,10
+DA:15,10
+DA:16,10
+DA:17,10
+DA:18,10
 FN:19,System.Void Micron.SqlClient.RetryHandler::.ctor(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval,System.Func`2<System.Exception,System.Boolean>[])
-FNDA:0,System.Void Micron.SqlClient.RetryHandler::.ctor(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval,System.Func`2<System.Exception,System.Boolean>[])
-DA:20,0
-DA:21,0
-DA:22,0
-DA:23,0
-DA:24,0
-DA:25,0
-DA:26,0
+FNDA:15,System.Void Micron.SqlClient.RetryHandler::.ctor(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval,System.Func`2<System.Exception,System.Boolean>[])
+DA:20,15
+DA:21,15
+DA:22,15
+DA:23,15
+DA:24,15
+DA:25,15
+DA:26,15
 FN:43,System.Boolean Micron.SqlClient.RetryHandler/<>c__DisplayClass5_0::<Execute>b__0(System.Func`2<System.Exception,System.Boolean>)
-FNDA:0,System.Boolean Micron.SqlClient.RetryHandler/<>c__DisplayClass5_0::<Execute>b__0(System.Func`2<System.Exception,System.Boolean>)
-DA:44,0
-BRDA:44,342,0,0
-BRDA:44,342,1,0
-BRDA:44,390,0,0
-BRDA:44,390,1,0
+FNDA:90,System.Boolean Micron.SqlClient.RetryHandler/<>c__DisplayClass5_0::<Execute>b__0(System.Func`2<System.Exception,System.Boolean>)
+DA:44,90
+BRDA:44,440,0,45
+BRDA:44,440,1,45
+BRDA:44,502,0,5
+BRDA:44,502,1,40
 LF:14
-LH:0
+LH:14
 BRF:4
-BRH:0
+BRH:4
 FNF:3
-FNH:0
+FNH:3
 end_of_record
 SF:/Users/jeff/projects/micron/src/Micron.SqlClient/Retry/RetryTimes.cs
 FN:19,System.Int32 Micron.SqlClient.RetryTimes::get_RetryCount()
-FNDA:0,System.Int32 Micron.SqlClient.RetryTimes::get_RetryCount()
-DA:20,0
+FNDA:45,System.Int32 Micron.SqlClient.RetryTimes::get_RetryCount()
+DA:20,45
 FN:22,System.Boolean Micron.SqlClient.RetryTimes::Equals(System.Object)
 FNDA:0,System.Boolean Micron.SqlClient.RetryTimes::Equals(System.Object)
 DA:23,0
 DA:24,0
-BRDA:23,6,0,0
-BRDA:23,6,1,0
+BRDA:23,13,0,0
+BRDA:23,13,1,0
 FN:26,System.Int32 Micron.SqlClient.RetryTimes::GetHashCode()
 FNDA:0,System.Int32 Micron.SqlClient.RetryTimes::GetHashCode()
 DA:27,0
 FN:28,Micron.SqlClient.RetryTimes Micron.SqlClient.RetryTimes::op_Implicit(System.Int32)
-FNDA:0,Micron.SqlClient.RetryTimes Micron.SqlClient.RetryTimes::op_Implicit(System.Int32)
-DA:29,0
+FNDA:45,Micron.SqlClient.RetryTimes Micron.SqlClient.RetryTimes::op_Implicit(System.Int32)
+DA:29,45
 FN:9,System.Void Micron.SqlClient.RetryTimes::.ctor(System.Int32)
-FNDA:0,System.Void Micron.SqlClient.RetryTimes::.ctor(System.Int32)
-DA:10,0
-DA:11,0
-DA:12,0
-DA:13,0
-DA:14,0
-DA:17,0
-DA:18,0
-BRDA:11,3,0,0
-BRDA:11,3,1,0
-BRDA:11,14,0,0
-BRDA:11,14,1,0
+FNDA:45,System.Void Micron.SqlClient.RetryTimes::.ctor(System.Int32)
+DA:10,45
+DA:11,45
+DA:12,10
+DA:13,10
+DA:14,10
+DA:17,35
+DA:18,35
+BRDA:11,17,0,40
+BRDA:11,17,1,5
+BRDA:11,42,0,10
+BRDA:11,42,1,35
 LF:12
-LH:0
+LH:9
 BRF:6
-BRH:0
+BRH:4
 FNF:5
-FNH:0
+FNH:3
 end_of_record
 SF:/Users/jeff/projects/micron/src/Micron.SqlClient/SqlGateway.cs
 FN:61,System.Data.Common.DbCommand Micron.SqlClient.SqlGateway::BuildCommand(System.String,System.Object[],System.Data.Common.DbConnection,System.Data.Common.DbTransaction)
@@ -164,10 +164,10 @@ DA:75,0
 DA:76,0
 DA:77,0
 DA:78,0
-BRDA:66,22,0,0
-BRDA:66,22,1,0
-BRDA:71,88,1,0
-BRDA:71,88,0,0
+BRDA:66,50,0,0
+BRDA:66,50,1,0
+BRDA:71,221,1,0
+BRDA:71,221,0,0
 FN:12,System.Void Micron.SqlClient.SqlGateway::.ctor(System.Action`1<Micron.SqlClient.ISqlGatewayConfigurationRootExpression>)
 FNDA:0,System.Void Micron.SqlClient.SqlGateway::.ctor(System.Action`1<Micron.SqlClient.ISqlGatewayConfigurationRootExpression>)
 DA:13,0
@@ -177,28 +177,35 @@ DA:17,0
 DA:18,0
 DA:19,0
 DA:20,0
-FN:89,Micron.SqlClient.ISqlGatewayConfigurationExceptionExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Connection(System.Func`1<System.Threading.Tasks.Task`1<System.Data.Common.DbConnection>>)
-FNDA:0,Micron.SqlClient.ISqlGatewayConfigurationExceptionExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Connection(System.Func`1<System.Threading.Tasks.Task`1<System.Data.Common.DbConnection>>)
-DA:90,0
-DA:91,0
+FN:91,Micron.SqlClient.ISqlGatewayConfigurationExceptionExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Connection(System.Func`1<System.Threading.Tasks.Task`1<TConnection>>)
+FNDA:0,Micron.SqlClient.ISqlGatewayConfigurationExceptionExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Connection(System.Func`1<System.Threading.Tasks.Task`1<TConnection>>)
 DA:92,0
 DA:93,0
-FN:95,Micron.SqlClient.ISqlGatewayConfigurationExceptionExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::OnException(System.Func`2<Micron.SqlClient.Retry.IExceptionFilterExpression,Micron.SqlClient.Retry.IExceptionRetryConfiguration>)
-FNDA:0,Micron.SqlClient.ISqlGatewayConfigurationExceptionExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::OnException(System.Func`2<Micron.SqlClient.Retry.IExceptionFilterExpression,Micron.SqlClient.Retry.IExceptionRetryConfiguration>)
-DA:96,0
-DA:97,0
+DA:94,0
+DA:95,0
+FN:97,Micron.SqlClient.ISqlGatewayConfigurationRetryExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::OnException(System.Func`2<System.Exception,System.Boolean>)
+FNDA:0,Micron.SqlClient.ISqlGatewayConfigurationRetryExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::OnException(System.Func`2<System.Exception,System.Boolean>)
 DA:98,0
 DA:99,0
 DA:100,0
-DA:103,0
+DA:101,0
+FN:103,Micron.SqlClient.ISqlGatewayConfigurationRetryExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::OnException(System.Func`2<TException,System.Boolean>)
+FNDA:0,Micron.SqlClient.ISqlGatewayConfigurationRetryExpression Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::OnException(System.Func`2<TException,System.Boolean>)
 DA:104,0
 DA:105,0
 DA:106,0
-DA:107,0
-FN:85,System.Void Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::.ctor(Micron.SqlClient.SqlGateway)
+FN:108,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Retry(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval)
+FNDA:0,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Retry(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval)
+DA:109,0
+DA:110,0
+FN:113,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Retry(Micron.SqlClient.RetryTimes,System.Action`1<Micron.SqlClient.Retry.IBackoffIntervalExpression>)
+FNDA:0,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::Retry(Micron.SqlClient.RetryTimes,System.Action`1<Micron.SqlClient.Retry.IBackoffIntervalExpression>)
+DA:114,0
+DA:115,0
+FN:86,System.Void Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::.ctor(Micron.SqlClient.SqlGateway)
 FNDA:0,System.Void Micron.SqlClient.SqlGateway/CommandConfigurationBuilder::.ctor(Micron.SqlClient.SqlGateway)
-DA:86,0
 DA:87,0
+DA:88,0
 FN:22,System.Void Micron.SqlClient.SqlGateway/<Execute>d__3::MoveNext()
 FNDA:0,System.Void Micron.SqlClient.SqlGateway/<Execute>d__3::MoveNext()
 DA:23,0
@@ -216,14 +223,14 @@ DA:39,0
 DA:40,0
 BRDA:23,16,0,0
 BRDA:23,16,1,0
-BRDA:24,169,0,0
-BRDA:25,223,0,0
-BRDA:25,223,1,0
-BRDA:24,169,1,0
-BRDA:30,706,1,0
-BRDA:34,590,0,0
-BRDA:34,590,1,0
-BRDA:30,706,0,0
+BRDA:24,209,0,0
+BRDA:25,283,0,0
+BRDA:25,283,1,0
+BRDA:24,209,1,0
+BRDA:30,939,1,0
+BRDA:34,763,0,0
+BRDA:34,763,1,0
+BRDA:30,939,0,0
 FN:42,System.Void Micron.SqlClient.SqlGateway/<Scalar>d__4`1::MoveNext()
 FNDA:0,System.Void Micron.SqlClient.SqlGateway/<Scalar>d__4`1::MoveNext()
 DA:43,0
@@ -247,109 +254,134 @@ BRDA:51,11,0,0
 BRDA:51,11,2,0
 BRDA:51,11,3,0
 BRDA:51,11,4,0
-BRDA:51,65,0,0
-BRDA:51,65,1,0
+BRDA:51,108,0,0
+BRDA:51,108,1,0
 BRDA:51,11,5,0
 BRDA:51,11,1,0
 BRDA:51,11,6,0
 BRDA:51,11,7,0
 BRDA:51,11,8,0
-BRDA:52,224,0,0
-BRDA:52,224,1,0
-BRDA:53,288,0,0
-BRDA:53,288,1,0
-BRDA:55,760,1,0
-BRDA:57,621,1,0
-BRDA:55,760,0,0
-BRDA:57,621,0,0
-BRDA:55,803,0,0
-BRDA:55,803,1,0
-BRDA:55,840,0,0
-BRDA:55,840,1,0
-BRDA:55,877,0,0
-BRDA:55,877,1,0
-LF:66
+BRDA:52,357,0,0
+BRDA:52,357,1,0
+BRDA:53,451,0,0
+BRDA:53,451,1,0
+BRDA:55,1016,1,0
+BRDA:57,847,1,0
+BRDA:55,1016,0,0
+BRDA:57,847,0,0
+BRDA:55,1079,0,0
+BRDA:55,1079,1,0
+BRDA:55,1136,0,0
+BRDA:55,1136,1,0
+BRDA:55,1193,0,0
+BRDA:55,1193,1,0
+LF:67
 LH:0
 BRF:39
 BRH:0
-FNF:8
+FNF:11
 FNH:0
 end_of_record
 SF:/Users/jeff/projects/micron/src/Micron.SqlClient/Retry/ExceptionRetryConfiguration.cs
-FN:12,Micron.SqlClient.Retry.IExceptionFilterExpression Micron.SqlClient.Retry.ConfigureRetries::OnException()
-FNDA:0,Micron.SqlClient.Retry.IExceptionFilterExpression Micron.SqlClient.Retry.ConfigureRetries::OnException()
+FN:12,Micron.SqlClient.Retry.IExceptionRetryExpression Micron.SqlClient.Retry.ConfigureRetries::OnException(System.Func`2<System.Exception,System.Boolean>)
+FNDA:0,Micron.SqlClient.Retry.IExceptionRetryExpression Micron.SqlClient.Retry.ConfigureRetries::OnException(System.Func`2<System.Exception,System.Boolean>)
 DA:13,0
 DA:14,0
 DA:15,0
 DA:16,0
 DA:17,0
-DA:21,0
-DA:22,0
-DA:23,0
-DA:24,0
+DA:21,5
+DA:22,5
+DA:24,5
 DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,5
+DA:30,0
+DA:31,0
+DA:33,5
+DA:34,5
+DA:35,5
+BRDA:26,32,0,0
+BRDA:28,72,0,0
+BRDA:28,72,1,0
+BRDA:26,32,1,0
+BRDA:30,149,0,0
+BRDA:30,149,1,0
 FN:8,System.Void Micron.SqlClient.Retry.ConfigureRetries::.ctor()
-FNDA:0,System.Void Micron.SqlClient.Retry.ConfigureRetries::.ctor()
-DA:9,0
-DA:10,0
-FN:37,Micron.SqlClient.Retry.IExceptionRetryExpression Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Matching(System.Func`2<System.Exception,System.Boolean>)
-FNDA:0,Micron.SqlClient.Retry.IExceptionRetryExpression Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Matching(System.Func`2<System.Exception,System.Boolean>)
-DA:38,0
-DA:39,0
-DA:40,0
-DA:41,0
-FN:44,Micron.SqlClient.Retry.IExceptionRetryExpression Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Matching(System.Func`2<TException,System.Boolean>)
-FNDA:0,Micron.SqlClient.Retry.IExceptionRetryExpression Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Matching(System.Func`2<TException,System.Boolean>)
-DA:45,0
-DA:46,0
-DA:47,0
-DA:48,0
-DA:49,0
-DA:50,0
-DA:51,0
-DA:52,0
-DA:53,0
-DA:54,0
-DA:55,0
-BRDA:48,12,0,0
-BRDA:48,12,1,0
-FN:57,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Retry(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval)
+FNDA:5,System.Void Micron.SqlClient.Retry.ConfigureRetries::.ctor()
+DA:9,5
+DA:10,5
+FN:54,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Retry(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval)
 FNDA:0,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Retry(Micron.SqlClient.RetryTimes,Micron.SqlClient.BackoffInterval)
+DA:55,0
+DA:56,0
+DA:57,0
 DA:58,0
 DA:59,0
-DA:60,0
-DA:61,0
-DA:62,0
-FN:64,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Retry(Micron.SqlClient.RetryTimes,System.Action`1<Micron.SqlClient.Retry.IBackoffIntervalExpression>)
+FN:61,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Retry(Micron.SqlClient.RetryTimes,System.Action`1<Micron.SqlClient.Retry.IBackoffIntervalExpression>)
 FNDA:0,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Retry(Micron.SqlClient.RetryTimes,System.Action`1<Micron.SqlClient.Retry.IBackoffIntervalExpression>)
+DA:62,0
+DA:63,0
+DA:64,0
 DA:65,0
 DA:66,0
-DA:67,0
-DA:68,0
+FN:68,System.Void Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Interval(Micron.SqlClient.IntervalCalculation)
+FNDA:0,System.Void Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Interval(Micron.SqlClient.IntervalCalculation)
 DA:69,0
-FN:71,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Interval(Micron.SqlClient.IntervalCalculation)
-FNDA:0,Micron.SqlClient.Retry.IExceptionRetryConfiguration Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::Interval(Micron.SqlClient.IntervalCalculation)
-DA:72,0
-DA:73,0
-DA:74,0
-DA:75,0
-FN:33,System.Void Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::.ctor(Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration)
-FNDA:0,System.Void Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::.ctor(Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration)
-DA:34,0
-DA:35,0
-FN:79,System.Func`2<System.Exception,System.Boolean> Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_Condition()
+FN:42,System.Void Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::.ctor(Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration,System.Func`2<System.Exception,System.Boolean>)
+FNDA:5,System.Void Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfigurer::.ctor(Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration,System.Func`2<System.Exception,System.Boolean>)
+DA:43,5
+DA:44,5
+DA:45,5
+DA:46,0
+DA:47,0
+DA:50,5
+DA:51,5
+DA:52,5
+BRDA:45,44,0,0
+BRDA:45,44,1,5
+BRDA:50,111,0,0
+BRDA:50,111,1,5
+FN:73,System.Func`2<System.Exception,System.Boolean> Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_Condition()
 FNDA:0,System.Func`2<System.Exception,System.Boolean> Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_Condition()
-DA:80,0
-FN:81,Micron.SqlClient.RetryTimes Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_RetryTimes()
+DA:74,0
+FN:75,Micron.SqlClient.RetryTimes Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_RetryTimes()
 FNDA:0,Micron.SqlClient.RetryTimes Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_RetryTimes()
-DA:82,0
-FN:83,Micron.SqlClient.BackoffInterval Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_BackoffInterval()
+DA:76,0
+FN:77,Micron.SqlClient.BackoffInterval Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_BackoffInterval()
 FNDA:0,Micron.SqlClient.BackoffInterval Micron.SqlClient.Retry.ConfigureRetries/ExceptionRetryConfiguration::get_BackoffInterval()
-DA:84,0
-LF:46
+DA:78,0
+LF:42
+LH:15
+BRF:10
+BRH:2
+FNF:9
+FNH:3
+end_of_record
+SF:/Users/jeff/projects/micron/src/Micron.SqlClient.SqlServer/SqlServerGateway.cs
+FN:15,System.Threading.Tasks.Task Micron.SqlClient.SqlServer.SqlServerGateway::Execute(Micron.SqlClient.ICommand[])
+FNDA:0,System.Threading.Tasks.Task Micron.SqlClient.SqlServer.SqlServerGateway::Execute(Micron.SqlClient.ICommand[])
+DA:16,0
+DA:17,0
+FN:20,System.Collections.Generic.IAsyncEnumerable`1<T> Micron.SqlClient.SqlServer.SqlServerGateway::Query(Micron.SqlClient.IQuery`1<T>)
+FNDA:0,System.Collections.Generic.IAsyncEnumerable`1<T> Micron.SqlClient.SqlServer.SqlServerGateway::Query(Micron.SqlClient.IQuery`1<T>)
+DA:21,0
+DA:22,0
+FN:25,System.Threading.Tasks.ValueTask`1<T> Micron.SqlClient.SqlServer.SqlServerGateway::Scalar(System.String,System.Object[])
+FNDA:0,System.Threading.Tasks.ValueTask`1<T> Micron.SqlClient.SqlServer.SqlServerGateway::Scalar(System.String,System.Object[])
+DA:26,0
+DA:27,0
+FN:9,System.Void Micron.SqlClient.SqlServer.SqlServerGateway::.ctor()
+FNDA:0,System.Void Micron.SqlClient.SqlServer.SqlServerGateway::.ctor()
+DA:10,0
+DA:11,0
+DA:13,0
+LF:9
 LH:0
-BRF:2
+BRF:0
 BRH:0
-FNF:11
+FNF:4
 FNH:0
 end_of_record

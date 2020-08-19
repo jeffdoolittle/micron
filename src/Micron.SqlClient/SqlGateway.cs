@@ -79,7 +79,8 @@
 
         private class CommandConfigurationBuilder :
             ISqlGatewayConfigurationRootExpression,
-            ISqlGatewayConfigurationExceptionExpression
+            ISqlGatewayConfigurationExceptionExpression,
+            ISqlGatewayConfigurationRetryExpression
         {
             private readonly SqlGateway gateway;
 
@@ -93,19 +94,40 @@
                 return this;
             }
 
-            public ISqlGatewayConfigurationExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression)
+            public ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition)
             {
-                var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException());
-                this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
+                ConfigureRetries.OnException(condition);
                 return this;
             }
 
-            public ISqlGatewayConfigurationExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null) where TException : Exception
+            public ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null) where TException : Exception
             {
-                var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException<TException>());
-                this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
                 return this;
             }
+
+            public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IExceptionRetryConfiguration Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff)
+            {
+                throw new NotImplementedException();
+            }
+
+            // public ISqlGatewayConfigurationExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression)
+            // {
+            //     var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException());
+            //     this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
+            //     return this;
+            // }
+
+            // public ISqlGatewayConfigurationExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null) where TException : Exception
+            // {
+            //     var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException<TException>());
+            //     this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
+            //     return this;
+            // }
         }
     }
 
@@ -138,9 +160,23 @@
 
     public interface ISqlGatewayConfigurationExceptionExpression
     {
-        IExceptionRetryExpression OnException(Func<Exception, bool> condition);
+        ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition);
 
-        IExceptionRetryExpression OnException<TException>(Func<TException, bool> condition = null)
+        ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null)
             where TException : Exception;
+    }
+
+    public interface ISqlGatewayConfigurationRetryExpression
+    {
+                IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff);
+
+        IExceptionRetryConfiguration Retry(RetryTimes times,
+            Action<IBackoffIntervalExpression> configureBackoff);
+
+    }
+
+    public interface ISqlGatewayConfigurationBackoffIntervalExpression
+    {
+        
     }
 }
