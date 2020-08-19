@@ -39,9 +39,18 @@ namespace Micron.SqlClient.Retry
                     throw new ArgumentNullException(nameof(condition));
                 }
 
-                condition = ex => condition?.Invoke(ex) ?? false;
-                   
-                this.configuration.Condition = ex => condition.Invoke(ex as TException);
+                Func<Exception, bool> nonGenericCondition;
+
+                if (condition == null)
+                {
+                    nonGenericCondition = ex => true;
+                }
+                else
+                {
+                    nonGenericCondition = ex =>  condition(ex as TException);
+                }
+
+                this.configuration.Condition = nonGenericCondition;
                 return this;
             }
 
