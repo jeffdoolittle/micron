@@ -25,15 +25,21 @@ namespace Micron.SqlClient.Retry
             this.conditions = conditions;
         }
 
-        public async Task Execute(Func<Task> action)
+        public void Execute(Action action) =>
+            _ = this.Execute(() =>
+                {
+                    action();
+                    return Task.CompletedTask;
+                });
+
+        public T Execute<T>(Func<T> function)
         {
             var tries = 0;
             do
             {
                 try
                 {
-                    await action().ConfigureAwait(true);
-                    break;
+                    return function();
                 }
                 catch (Exception ex)
                 {
@@ -45,7 +51,38 @@ namespace Micron.SqlClient.Retry
                     {
                         throw;
                     }
-                    await this.backoffInterval.Backoff(tries).ConfigureAwait(true);
+                    this.backoffInterval.Backoff(tries);
+                }
+            } while (true);
+        }
+
+        public async Task ExecuteAsync(Func<Task> action) =>
+            _ = await this.ExecuteAsync(async () =>
+                {
+                    await action();
+                    return Unit.Default;
+                });
+
+        public async Task<T> ExecuteAsync<T>(Func<Task<T>> function)
+        {
+            var tries = 0;
+            do
+            {
+                try
+                {
+                    return await function().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (tries++ > this.retryTimes.RetryCount)
+                    {
+                        throw;
+                    }
+                    if (!this.conditions.Any(condition => condition(ex)))
+                    {
+                        throw;
+                    }
+                    await this.backoffInterval.BackoffAsync(tries).ConfigureAwait(false);
                 }
             } while (true);
         }
@@ -54,7 +91,7 @@ namespace Micron.SqlClient.Retry
                   => new RetryConfigurer().OnException(condition);
 
         public static IRetryTimesExpression OnException<TException>(Func<TException, bool>? condition = null)
-            where TException : Exception => 
+            where TException : Exception =>
                 new RetryConfigurer().OnException(condition);
 
         private class RetryConfigurer :

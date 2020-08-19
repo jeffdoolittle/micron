@@ -10,7 +10,7 @@ namespace Micron.SqlClient.Retry
         public async Task Can_create_a_retry_handler()
         {
             var handler = new RetryHandler(5, 1000, ex => true);
-            await handler.Execute(() => Task.CompletedTask);
+            await handler.ExecuteAsync(() => Task.CompletedTask);
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace Micron.SqlClient.Retry
             }
 
             var handler = new RetryHandler(RetryTimes.MaxRetries, 1000, ex => true);
-            await handler.Execute(exec);
+            await handler.ExecuteAsync(exec);
 
             Assert.Equal(1, count);
         }
@@ -70,7 +70,7 @@ namespace Micron.SqlClient.Retry
 
             var handler = new RetryHandler(RetryTimes.MaxRetries,
                 BackoffInterval.MinBackoffMilliseconds, ex => true);
-            await handler.Execute(exec);
+            await handler.ExecuteAsync(exec);
 
             Assert.Equal(5, tries);
         }
@@ -93,7 +93,7 @@ namespace Micron.SqlClient.Retry
             }
 
             var handler = new RetryHandler(canHandle);
-            await handler.Execute(exec);
+            await handler.ExecuteAsync(exec);
 
             Assert.Equal(5, tries);
         }
@@ -111,7 +111,7 @@ namespace Micron.SqlClient.Retry
             }
 
             var handler = new RetryHandler(canHandle);
-            _ = await Assert.ThrowsAsync<Exception>(() => handler.Execute(exec));
+            _ = await Assert.ThrowsAsync<Exception>(() => handler.ExecuteAsync(exec));
 
             Assert.Equal(1, tries);
         }
@@ -123,7 +123,7 @@ namespace Micron.SqlClient.Retry
                 .OnException<ArgumentNullException>(ex => true)
                 .Retry(5, 50);
 
-            await handler.Execute(() => Task.CompletedTask);
+            await handler.ExecuteAsync(() => Task.CompletedTask);
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace Micron.SqlClient.Retry
                 .OnException<ArgumentNullException>()
                 .Retry(5, calc);
 
-            await handler.Execute(() => Task.CompletedTask);
+            await handler.ExecuteAsync(() => Task.CompletedTask);
         }
     }
 }

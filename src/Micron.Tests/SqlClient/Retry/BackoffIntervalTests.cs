@@ -25,7 +25,7 @@ namespace Micron.SqlClient.Retry
 
             for (var i = 0; i < RetryTimes.MaxRetries; i++)
             {
-                await interval.Backoff(i + 1);
+                await interval.BackoffAsync(i + 1);
             }
 
             Assert.Equal(5, callCount);

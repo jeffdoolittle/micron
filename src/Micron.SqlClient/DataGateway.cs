@@ -8,13 +8,13 @@
     using System.Threading.Tasks;
     using Micron.SqlClient.Retry;
 
-    public static class DataGatewayExtensions
-    {
-        public static ValueTask<T> Scalar<T>(this IDataGateway gateway, string commandText, CancellationToken ct = default)
-        {
-            return gateway.Scalar<T>(commandText, ct);
-        }
-    }
+    // public static class DataGatewayExtensions
+    // {
+    //     public static ValueTask<T> Scalar<T>(this IDataGateway gateway, string commandText, CancellationToken ct = default)
+    //     {
+    //         return gateway.Scalar<T>(commandText, ct);
+    //     }
+    // }
 
     public class DataGateway : IDataGateway
     {
@@ -46,7 +46,7 @@
                 await conn.CloseAsync();
             }
 
-            await this.retryHandler.Execute(() => exec(request.Commands));
+            await this.retryHandler.ExecuteAsync(() => exec(request.Commands));
         }
 
         public async ValueTask<T> Scalar<T>(IScalarRequest<T> request)
@@ -74,7 +74,7 @@
                 await conn.CloseAsync();
             }
 
-            await this.retryHandler.Execute(() => exec(request.CommandText, request.Parameters));
+            await this.retryHandler.ExecuteAsync(() => exec(request.CommandText, request.Parameters));
 
             return value;
         }
@@ -95,7 +95,7 @@
                 await conn.CloseAsync();
             }
 
-            await this.retryHandler.Execute(() =>
+            await this.retryHandler.ExecuteAsync(() =>
             {
                 enumerable = exec(query);
                 return Task.CompletedTask;

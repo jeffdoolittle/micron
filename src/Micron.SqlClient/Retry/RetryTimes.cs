@@ -19,7 +19,7 @@ namespace Micron.SqlClient.Retry
 
         public int RetryCount { get; }
 
-        public override bool Equals(object obj) => 
+        public override bool Equals(object? obj) => 
             obj is RetryTimes times &&
                 this.RetryCount == times.RetryCount;
 

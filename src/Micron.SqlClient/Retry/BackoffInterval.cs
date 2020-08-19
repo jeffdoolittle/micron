@@ -1,14 +1,15 @@
 namespace Micron.SqlClient.Retry
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
 
     public delegate int IntervalCalculation(int attempt);
 
     public struct BackoffInterval
     {
-        public const int MaxBackoffMilliseconds = 30000;
-        public const int MinBackoffMilliseconds = 50;
+        public const int MaxBackoffMilliseconds = 10000;
+        public const int MinBackoffMilliseconds = 20;
 
         private readonly IntervalCalculation intervalCalculation;
 
@@ -38,20 +39,33 @@ namespace Micron.SqlClient.Retry
             this.intervalCalculation = intervalCalculation;
         }
 
+        public void Backoff(int attempt)
+        {
+            if (attempt > RetryTimes.MaxRetries)
+            {
+                throw new ArgumentOutOfRangeException(nameof(attempt), attempt,
+                    $"Value must be between 1 and {RetryTimes.MaxRetries} (inclusive).");
+            }
+
+            var interval = this.intervalCalculation(attempt);
+
+            Thread.Sleep(interval);
+        }
+
         /// <summary>
         /// Delay the running task for the specified interval.
         /// </summary>
         /// <returns></returns>
-        public async Task Backoff(int retryCount)
+        public async Task BackoffAsync(int attempt, CancellationToken ct = default)
         {
-            if (retryCount > RetryTimes.MaxRetries)
+            if (attempt > RetryTimes.MaxRetries)
             {
-                throw new ArgumentOutOfRangeException(nameof(retryCount), retryCount,
+                throw new ArgumentOutOfRangeException(nameof(attempt), attempt,
                     $"Value must be between 1 and {RetryTimes.MaxRetries} (inclusive).");
             }
 
-            var interval = this.intervalCalculation(retryCount);
-            await Task.Delay(interval).ConfigureAwait(true);
+            var interval = this.intervalCalculation(attempt);
+            await Task.Delay(interval, ct).ConfigureAwait(false);
         }
 
         public static implicit operator BackoffInterval(TimeSpan interval)

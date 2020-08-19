@@ -7,15 +7,22 @@
 
     public interface IDataGateway
     {
-        Task Execute(ICommand command, CancellationToken ct = default);
+        void Execute(ICommandRequest command);
 
-        Task Execute(ICommand[] commands, CancellationToken ct = default);
+        Task ExecuteAsync(ICommandRequest command, CancellationToken ct = default);
 
-        Task<TValue> Scalar<TValue>(IScalarRequest<TValue> request, CancellationToken ct = default);
+        TValue Scalar<TValue>(IScalarRequest<TValue> request);
 
-        IReadResult Read(IReadRequest request, CancellationToken ct = default);
+        Task<TValue> ScalarAsync<TValue>(IScalarRequest<TValue> request,
+            CancellationToken ct = default);
 
-        IReadMultipleResult ReadMultiple(IReadRequest request, CancellationToken ct = default);
+        Task<IReadResult> ReadAsync(IReadRequest request, CancellationToken ct = default);
+
+        IReadRequest Read(IReadRequest request);
+
+        Task<IReadMultipleResult> ReadMultipleAsync(IReadRequest request, CancellationToken ct = default);
+
+        IReadMultipleResult ReadMultiple(IReadRequest request);
     }
 
     public interface IDataStatement

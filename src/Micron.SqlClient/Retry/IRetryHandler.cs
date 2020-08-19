@@ -5,6 +5,12 @@ namespace Micron.SqlClient.Retry
 
     public interface IRetryHandler
     {
-        Task Execute(Func<Task> action);
+        void Execute(Action action);
+
+        Task ExecuteAsync(Func<Task> action);
+
+        T Execute<T>(Func<T> function);
+
+        Task<T> ExecuteAsync<T>(Func<Task<T>> function);
     }
 }

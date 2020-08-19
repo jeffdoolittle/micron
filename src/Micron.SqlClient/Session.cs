@@ -5,84 +5,8 @@ namespace Micron.SqlClient
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
-    using Micron.SqlClient.Connect;
 
-    public interface IReadOnlySession : IDisposable, IAsyncDisposable
-    {
-        void Open();
-
-
-        Task OpenAsync(CancellationToken ct = default);
-    }
-
-    public interface ISession : IReadOnlySession
-    {
-        void Commit();
-
-        Task Commit(CancellationToken ct = default);
-    }
-    
-    public interface ISessionFactory
-    {
-        IReadOnlySession OpenReadOnly();
-
-        ISession OpenSession(IsolationLevel? isolationLevel = null);
-
-        Task<IReadOnlySession> OpenReadOnlyAsync(CancellationToken ct = default);
-
-        Task<ISession> OpenSessionAsync(CancellationToken ct = default,
-            IsolationLevel? isolationLevel = null);
-    }
-
-    public class SessionFactory : ISessionFactory
-    {
-        private readonly IDbConnectionFactory connectionFactory;
-        private readonly IsolationLevel defaultIsolationLevel;
-
-        public SessionFactory(IDbConnectionFactory connectionFactory, 
-            IsolationLevel defaultIsolationLevel = IsolationLevel.ReadCommitted)
-        {
-            this.connectionFactory = connectionFactory;
-            this.defaultIsolationLevel = defaultIsolationLevel;
-        }
-
-        public IReadOnlySession OpenReadOnly()
-        {
-            var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection);
-            session.Open();
-            return session;
-        }
-
-        public async Task<IReadOnlySession> OpenReadOnlyAsync(CancellationToken ct = default)
-        {
-            var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection);
-            await session.OpenAsync(ct);
-            return session;
-        }
-
-        public ISession OpenSession(IsolationLevel? isolationLevel = null)
-        {
-            isolationLevel ??= this.defaultIsolationLevel;
-            var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection, isolationLevel);
-            session.Open();
-            return session;
-        }
-
-        public async Task<ISession> OpenSessionAsync(CancellationToken ct = default,
-            IsolationLevel? isolationLevel = null)
-        {
-            isolationLevel ??= this.defaultIsolationLevel;
-            var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection, isolationLevel);
-            await session.OpenAsync(ct);
-            return session;
-        }
-    }
-
-    internal class Session : ISession
+    internal partial class Session : ISession
     {
         private bool disposed;
         private readonly DbConnection connection;
@@ -96,7 +20,7 @@ namespace Micron.SqlClient
             this.transaction = new NulloTransaction();
         }
 
-        public void Open()
+        internal void Open()
         {
             this.connection.Open();
 
@@ -107,9 +31,7 @@ namespace Micron.SqlClient
             }
         }
 
-        public void Commit() => this.transaction.Commit();
-
-        public async Task OpenAsync(CancellationToken ct = default)
+        internal async Task OpenAsync(CancellationToken ct = default)
         {
             await this.connection.OpenAsync(ct).ConfigureAwait(false);
 
@@ -121,7 +43,9 @@ namespace Micron.SqlClient
             }
         }
 
-        public async Task Commit(CancellationToken ct = default) =>
+        public void Commit() => this.transaction.Commit();
+
+        public async Task CommitAsync(CancellationToken ct = default) =>
             await this.transaction.CommitAsync(ct).ConfigureAwait(false);
 
         public async ValueTask DisposeAsync()
