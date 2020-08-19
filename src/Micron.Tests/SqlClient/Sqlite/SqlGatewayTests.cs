@@ -1,6 +1,5 @@
 ﻿namespace Micron.SqlClient.Sqlite
 {
-    using System;
     using System.Data.Common;
     using System.Data.SQLite;
     using System.Threading.Tasks;
@@ -20,7 +19,7 @@
 
             var gateway = new SqlGateway(_ => _
                 .Connection(openConnection)
-                .OnException<ArgumentException>()
+                .OnException<DbException>()
                 .Retry(5, backoff =>
                     backoff.Interval(attempt => attempt * attempt * 50)
                 )

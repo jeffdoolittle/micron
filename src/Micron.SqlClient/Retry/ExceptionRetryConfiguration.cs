@@ -41,25 +41,29 @@ namespace Micron.SqlClient.Retry
                 return this;
             }
 
-            public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff)
+            public IRetryHandler Retry(RetryTimes times, BackoffInterval backoff)
             {
                 this.configuration.RetryTimes = times;
                 this.configuration.BackoffInterval = backoff;
-                return this.configuration;
+                return new RetryHandler(this.configuration.RetryTimes,
+                    this.configuration.BackoffInterval,
+                    this.configuration.Condition);
             }
 
-            public IExceptionRetryConfiguration Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff)
+            public IRetryHandler Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff)
             {
                 this.configuration.RetryTimes = times;
                 configureBackoff(this);
-                return this.configuration;
+                return new RetryHandler(this.configuration.RetryTimes,
+                    this.configuration.BackoffInterval,
+                    this.configuration.Condition);
             }
 
             public void Interval(IntervalCalculation intervalCalculation) =>
                 this.configuration.BackoffInterval = intervalCalculation;
         }
 
-        private class ExceptionRetryConfiguration : IExceptionRetryConfiguration
+        private class ExceptionRetryConfiguration
         {
             public Func<Exception, bool> Condition { get; set; }
 
@@ -67,13 +71,6 @@ namespace Micron.SqlClient.Retry
 
             public BackoffInterval BackoffInterval { get; set; }
         }
-    }
-
-    public interface IExceptionRetryConfiguration
-    {
-        Func<Exception, bool> Condition { get; }
-        RetryTimes RetryTimes { get; }
-        BackoffInterval BackoffInterval { get; }
     }
 
     public interface IExceptionConditionExpression
@@ -85,9 +82,9 @@ namespace Micron.SqlClient.Retry
 
     public interface IExceptionRetryExpression
     {
-        IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff);
+        IRetryHandler Retry(RetryTimes times, BackoffInterval backoff);
 
-        IExceptionRetryConfiguration Retry(RetryTimes times,
+        IRetryHandler Retry(RetryTimes times,
             Action<IBackoffIntervalExpression> configureBackoff);
     }
 

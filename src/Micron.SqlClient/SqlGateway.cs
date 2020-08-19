@@ -10,7 +10,7 @@
     public class SqlGateway : ISqlGateway
     {
         private Func<Task<DbConnection>> connectionFactory;
-        private IExceptionRetryConfiguration retryConfiguration;
+        private IRetryHandler retryHandler;
 
         public SqlGateway(Action<ISqlGatewayConfigurationRootExpression> configure)
         {
@@ -20,42 +20,86 @@
 
         public async Task Execute(params ICommand[] commands)
         {
-            using var conn = await this.connectionFactory();
-            using var tran = await conn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
-
-            // TODO: add retry logic in here.
             // TODO: allow cancellation tokens
-            // todo: make retry handling a function, not a configuration option. tell, don't ask!
 
-            foreach (var command in commands)
+            async Task exec(ICommand[] commands)
             {
-                using var cmd = BuildCommand(command.CommandText, command.Parameters, conn, tran);
-                var affected = await cmd.ExecuteNonQueryAsync();
-                if (command.ExpectedAffectedRows != affected)
+                using var conn = await this.connectionFactory();
+                using var tran = await conn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+                foreach (var command in commands)
                 {
-                    throw new MicronException($"Expected ${command.ExpectedAffectedRows} affected rows but returned ${affected}.");
+                    using var cmd = BuildCommand(command.CommandText, command.Parameters, conn, tran);
+                    var affected = await cmd.ExecuteNonQueryAsync();
+                    if (command.ExpectedAffectedRows != affected)
+                    {
+                        throw new MicronException($"Expected ${command.ExpectedAffectedRows} affected rows but returned ${affected}.");
+                    }
                 }
+                await tran.CommitAsync();
+                await conn.CloseAsync();
             }
-            await tran.CommitAsync();
+
+            await this.retryHandler.Execute(() => exec(commands));
         }
 
         public async ValueTask<T> Scalar<T>(string commandText, params object[] parameters)
         {
-            using var conn = await this.connectionFactory();
-            using var cmd = BuildCommand(commandText, parameters, conn);
-            var result = await cmd.ExecuteScalarAsync();
-            return (T)Convert.ChangeType(result, typeof(T));
+            T value = default;
+
+            static TValue convert<TValue>(object value)
+            {
+                try
+                {
+                    return (TValue)Convert.ChangeType(value, typeof(TValue));
+                }
+                catch (Exception ex)
+                {
+                    throw new MicronException($"Unable to convert ${value} to {typeof(T)}", ex);
+                }
+            }
+
+            async Task exec(string commandText, params object[] parameters)
+            {
+                using var conn = await this.connectionFactory();
+                using var cmd = BuildCommand(commandText, parameters, conn);
+                var result = await cmd.ExecuteScalarAsync();
+                value = convert<T>(result);
+                await conn.CloseAsync();
+            }
+
+            await this.retryHandler.Execute(() => exec(commandText, parameters));
+
+            return value;
         }
 
         public async IAsyncEnumerable<T> Query<T>(IQuery<T> query)
         {
-            using var conn = await this.connectionFactory();
-            using var cmd = BuildCommand(query.CommandText, query.Parameters, conn);
-            using var rdr = await cmd.ExecuteReaderAsync();
-            while (await rdr.ReadAsync())
+            IAsyncEnumerable<T> enumerable;
+
+            async IAsyncEnumerable<TValue> exec<TValue>(IQuery<TValue> query)
             {
-                yield return await query.Map(rdr);
+                using var conn = await this.connectionFactory();
+                using var cmd = BuildCommand(query.CommandText, query.Parameters, conn);
+                using var rdr = await cmd.ExecuteReaderAsync();
+                while (await rdr.ReadAsync())
+                {
+                    yield return await query.Map(rdr);
+                }
+                await conn.CloseAsync();
             }
+
+            await this.retryHandler.Execute(() => {
+                enumerable = exec(query);
+                return Task.CompletedTask;
+            });
+
+            await using var enumerator = enumerable.GetAsyncEnumerator();
+            for(var more = true; more;)
+            {
+                more = await enumerator.MoveNextAsync();
+                yield return enumerator.Current;
+            }
+
         }
 
         private static DbCommand BuildCommand(string commandText, object[] parameters, DbConnection conn, DbTransaction tran = null)
@@ -95,24 +139,19 @@
                 return this;
             }
 
-            public ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition = null)
+            public ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null)
+                where TException : DbException
             {
                 this.retryExpression = ConfigureRetries.OnException(condition);
                 return this;
             }
 
-            public ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null) where TException : Exception
-            {
-                this.retryExpression = ConfigureRetries.OnException(condition);
-                return this;
-            }
-
-            public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff) =>
-                this.retryExpression.Retry(times, backoff);
+            public void Retry(RetryTimes times, BackoffInterval backoff) =>
+                this.gateway.retryHandler = this.retryExpression.Retry(times, backoff);
 
 
-            public IExceptionRetryConfiguration Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff) => 
-                this.retryExpression.Retry(times, configureBackoff);
+            public void Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff) =>
+                this.gateway.retryHandler = this.retryExpression.Retry(times, configureBackoff);
         }
     }
 
@@ -145,17 +184,15 @@
 
     public interface ISqlGatewayConfigurationExceptionConditionExpression
     {
-        ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition = null);
-
         ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null)
-            where TException : Exception;
+            where TException : DbException;
     }
 
     public interface ISqlGatewayConfigurationRetryExpression
     {
-        IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff);
+        void Retry(RetryTimes times, BackoffInterval backoff);
 
-        IExceptionRetryConfiguration Retry(RetryTimes times,
+        void Retry(RetryTimes times,
             Action<IBackoffIntervalExpression> configureBackoff);
 
     }

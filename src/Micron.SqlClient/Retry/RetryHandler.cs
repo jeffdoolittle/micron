@@ -4,7 +4,7 @@ namespace Micron.SqlClient
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class RetryHandler
+    public class RetryHandler : IRetryHandler
     {
         private readonly RetryTimes retryTimes;
         private readonly BackoffInterval backoffInterval;

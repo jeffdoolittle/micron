@@ -116,5 +116,28 @@ namespace Micron.SqlClient.Retry
 
             Assert.Equal(1, tries);
         }
+
+        [Fact]
+        public async Task Can_build_and_execute_with_fluent_interface()
+        {
+            var handler = ConfigureRetries
+                .OnException<ArgumentNullException>(ex => true)
+                .Retry(5, 50);
+
+            await handler.Execute(() => Task.CompletedTask);
+        }
+
+        [Fact]
+        public async Task Can_build_and_execute_with_fluent_interface_using_backoff_function()
+        {
+            IntervalCalculation calc = attempt => attempt * attempt * 50;
+            var interval = new BackoffInterval(calc);
+
+            var handler = ConfigureRetries
+                .OnException<ArgumentNullException>()
+                .Retry(5, calc);
+
+            await handler.Execute(() => Task.CompletedTask);
+        }
     }
 }
