@@ -10,8 +10,7 @@
     public class SqlGateway : ISqlGateway
     {
         private Func<Task<DbConnection>> connectionFactory;
-        private readonly List<IExceptionRetryConfiguration> retryConfigurations = 
-            new List<IExceptionRetryConfiguration>();
+        private IExceptionRetryConfiguration retryConfiguration;
 
         public SqlGateway(Action<ISqlGatewayConfigurationRootExpression> configure)
         {
@@ -79,63 +78,48 @@
 
         private class CommandConfigurationBuilder :
             ISqlGatewayConfigurationRootExpression,
-            ISqlGatewayConfigurationExceptionExpression,
+            ISqlGatewayConfigurationExceptionConditionExpression,
             ISqlGatewayConfigurationRetryExpression
         {
             private readonly SqlGateway gateway;
+            private IExceptionRetryExpression retryExpression;
 
             public CommandConfigurationBuilder(SqlGateway gateway)
                 => this.gateway = gateway;
 
-            public ISqlGatewayConfigurationExceptionExpression Connection<TConnection>(Func<Task<TConnection>> connectionFactory)
+            public ISqlGatewayConfigurationExceptionConditionExpression Connection<TConnection>(Func<Task<TConnection>> connectionFactory)
                 where TConnection : DbConnection
             {
                 this.gateway.connectionFactory = async () => await connectionFactory();
                 return this;
             }
 
-            public ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition)
+            public ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition = null)
             {
-                ConfigureRetries.OnException(condition);
+                this.retryExpression = ConfigureRetries.OnException(condition);
                 return this;
             }
 
             public ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null) where TException : Exception
             {
+                this.retryExpression = ConfigureRetries.OnException(condition);
                 return this;
             }
 
-            public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff)
-            {
-                throw new NotImplementedException();
-            }
+            public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff) =>
+                this.retryExpression.Retry(times, backoff);
 
-            public IExceptionRetryConfiguration Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff)
-            {
-                throw new NotImplementedException();
-            }
 
-            // public ISqlGatewayConfigurationExceptionExpression OnException(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression)
-            // {
-            //     var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException());
-            //     this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
-            //     return this;
-            // }
-
-            // public ISqlGatewayConfigurationExceptionExpression OnException<TException>(Func<IExceptionFilterExpression, IExceptionRetryConfiguration> filterExpression = null) where TException : Exception
-            // {
-            //     var exceptionRetryConfiguration = filterExpression(ConfigureRetries.OnException<TException>());
-            //     this.gateway.retryConfigurations.Add(exceptionRetryConfiguration);
-            //     return this;
-            // }
+            public IExceptionRetryConfiguration Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff) => 
+                this.retryExpression.Retry(times, configureBackoff);
         }
     }
 
     public interface ISqlGateway
     {
-         Task Execute(params ICommand[] commands);
-         ValueTask<T> Scalar<T>(string commandText, params object[] parameters);
-         IAsyncEnumerable<T> Query<T>(IQuery<T> query);
+        Task Execute(params ICommand[] commands);
+        ValueTask<T> Scalar<T>(string commandText, params object[] parameters);
+        IAsyncEnumerable<T> Query<T>(IQuery<T> query);
     }
 
     public interface ICommand
@@ -154,13 +138,13 @@
 
     public interface ISqlGatewayConfigurationRootExpression
     {
-        ISqlGatewayConfigurationExceptionExpression Connection<TConnection>(Func<Task<TConnection>> connectionFactory)
+        ISqlGatewayConfigurationExceptionConditionExpression Connection<TConnection>(Func<Task<TConnection>> connectionFactory)
             where TConnection : DbConnection;
     }
 
-    public interface ISqlGatewayConfigurationExceptionExpression
+    public interface ISqlGatewayConfigurationExceptionConditionExpression
     {
-        ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition);
+        ISqlGatewayConfigurationRetryExpression OnException(Func<Exception, bool> condition = null);
 
         ISqlGatewayConfigurationRetryExpression OnException<TException>(Func<TException, bool> condition = null)
             where TException : Exception;
@@ -168,15 +152,10 @@
 
     public interface ISqlGatewayConfigurationRetryExpression
     {
-                IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff);
+        IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff);
 
         IExceptionRetryConfiguration Retry(RetryTimes times,
             Action<IBackoffIntervalExpression> configureBackoff);
 
-    }
-
-    public interface ISqlGatewayConfigurationBackoffIntervalExpression
-    {
-        
     }
 }
