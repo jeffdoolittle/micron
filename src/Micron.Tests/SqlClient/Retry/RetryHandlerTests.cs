@@ -2,7 +2,6 @@ namespace Micron.SqlClient.Retry
 {
     using System;
     using System.Threading.Tasks;
-    using Micron.SqlClient;
     using Xunit;
 
     public class RetryHandlerTests

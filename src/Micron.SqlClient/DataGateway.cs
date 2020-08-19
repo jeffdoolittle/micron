@@ -4,45 +4,52 @@
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
+    using System.Threading;
     using System.Threading.Tasks;
     using Micron.SqlClient.Retry;
 
-    public class SqlGateway : ISqlGateway
+    public static class DataGatewayExtensions
+    {
+        public static ValueTask<T> Scalar<T>(this IDataGateway gateway, string commandText, CancellationToken ct = default)
+        {
+            return gateway.Scalar<T>(commandText, ct);
+        }
+    }
+
+    public class DataGateway : IDataGateway
     {
         private Func<Task<DbConnection>> connectionFactory;
         private IRetryHandler retryHandler;
 
-        public SqlGateway(Action<ISqlGatewayConfigurationRootExpression> configure)
+        public DataGateway(Action<ISqlGatewayConfigurationRootExpression> configure)
         {
             var builder = new CommandConfigurationBuilder(this);
             configure(builder);
         }
 
-        public async Task Execute(params ICommand[] commands)
+        public async Task Execute(ICommandRequest request)
         {
-            // TODO: allow cancellation tokens
-
-            async Task exec(ICommand[] commands)
+            async Task exec(IEnumerable<ICommand> commands)
             {
                 using var conn = await this.connectionFactory();
                 using var tran = await conn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
                 foreach (var command in commands)
                 {
-                    using var cmd = BuildCommand(command.CommandText, command.Parameters, conn, tran);
-                    var affected = await cmd.ExecuteNonQueryAsync();
+                    using var cmd = BuildCommand(command, conn, tran);
+                    var affected = await cmd.ExecuteNonQueryAsync(request.CancellationToken).ConfigureAwait(false);
                     if (command.ExpectedAffectedRows != affected)
                     {
                         throw new MicronException($"Expected ${command.ExpectedAffectedRows} affected rows but returned ${affected}.");
                     }
                 }
-                await tran.CommitAsync();
+                await tran.CommitAsync(request.CancellationToken).ConfigureAwait(false);
                 await conn.CloseAsync();
             }
 
-            await this.retryHandler.Execute(() => exec(commands));
+            await this.retryHandler.Execute(() => exec(request.Commands));
         }
 
-        public async ValueTask<T> Scalar<T>(string commandText, params object[] parameters)
+        public async ValueTask<T> Scalar<T>(IScalarRequest<T> request)
         {
             T value = default;
 
@@ -61,13 +68,13 @@
             async Task exec(string commandText, params object[] parameters)
             {
                 using var conn = await this.connectionFactory();
-                using var cmd = BuildCommand(commandText, parameters, conn);
+                using var cmd = BuildCommand(request, conn);
                 var result = await cmd.ExecuteScalarAsync();
                 value = convert<T>(result);
                 await conn.CloseAsync();
             }
 
-            await this.retryHandler.Execute(() => exec(commandText, parameters));
+            await this.retryHandler.Execute(() => exec(request.CommandText, request.Parameters));
 
             return value;
         }
@@ -79,7 +86,7 @@
             async IAsyncEnumerable<TValue> exec<TValue>(IQuery<TValue> query)
             {
                 using var conn = await this.connectionFactory();
-                using var cmd = BuildCommand(query.CommandText, query.Parameters, conn);
+                using var cmd = BuildCommand(query, conn);
                 using var rdr = await cmd.ExecuteReaderAsync();
                 while (await rdr.ReadAsync())
                 {
@@ -102,18 +109,18 @@
             }
         }
 
-        private static DbCommand BuildCommand(string commandText, object[] parameters,
+        private static DbCommand BuildCommand(IDataStatement statement,
             DbConnection conn, DbTransaction tran = null)
         {
             var cmd = conn.CreateCommand();
-            cmd.CommandText = commandText;
+            cmd.CommandText = statement.CommandText;
 
             if (tran != null)
             {
                 cmd.Transaction = tran;
             }
 
-            foreach (var parameter in parameters)
+            foreach (var parameter in statement.Parameters)
             {
                 var p = cmd.CreateParameter();
                 p.Value = parameter;
@@ -154,28 +161,6 @@
             public void Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff) =>
                 this.gateway.retryHandler = this.retryExpression.Retry(times, configureBackoff);
         }
-    }
-
-    public interface ISqlGateway
-    {
-        Task Execute(params ICommand[] commands);
-        ValueTask<T> Scalar<T>(string commandText, params object[] parameters);
-        IAsyncEnumerable<T> Query<T>(IQuery<T> query);
-    }
-
-    public interface ICommand
-    {
-        string CommandText { get; }
-        object[] Parameters { get; }
-        int TimeoutSeconds { get; }
-        int ExpectedAffectedRows { get; }
-    }
-
-    public interface IQuery<T>
-    {
-        string CommandText { get; }
-        object[] Parameters { get; }
-        Func<IDataReader, Task<T>> Map { get; }
     }
 
     public interface ISqlGatewayConfigurationRootExpression

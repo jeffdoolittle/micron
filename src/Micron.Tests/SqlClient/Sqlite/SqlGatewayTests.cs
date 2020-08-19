@@ -13,7 +13,7 @@
             static async Task<DbConnection> openConnection()
             {
                 var conn = new SQLiteConnection("Data Source=file:memdb1?mode=memory&cache=shared");
-                await conn.OpenAsync();
+                await Task.CompletedTask;
                 return conn;
             }
 

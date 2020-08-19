@@ -14,7 +14,7 @@ namespace Micron.SqlClient.Retry
         {
             this.retryTimes = RetryTimes.MaxRetries;
             this.backoffInterval = BackoffInterval.MinBackoffMilliseconds;
-            this.conditions = conditions;
+            this.conditions = conditions ?? new Func<Exception, bool>[0];
         }
 
         public RetryHandler(RetryTimes retryTimes, BackoffInterval backoffInterval,
@@ -53,8 +53,9 @@ namespace Micron.SqlClient.Retry
         public static IRetryTimesExpression OnException(Func<Exception, bool> condition)
                   => new RetryConfigurer().OnException(condition);
 
-        public static IRetryTimesExpression OnException<TException>(Func<TException, bool> condition = null)
-            where TException : Exception => new RetryConfigurer().OnException<TException>(condition);
+        public static IRetryTimesExpression OnException<TException>(Func<TException, bool>? condition = null)
+            where TException : Exception => 
+                new RetryConfigurer().OnException(condition);
 
         private class RetryConfigurer :
             IConditionExpression,
@@ -66,10 +67,10 @@ namespace Micron.SqlClient.Retry
             public RetryConfigurer() =>
                 this.configuration = new ExceptionRetryConfiguration();
 
-            public IRetryTimesExpression OnException(Func<Exception, bool> condition = null)
+            public IRetryTimesExpression OnException(Func<Exception, bool>? condition = null)
                 => this.OnException<Exception>(condition);
 
-            public IRetryTimesExpression OnException<TException>(Func<TException, bool> condition = null)
+            public IRetryTimesExpression OnException<TException>(Func<TException, bool>? condition = null)
                 where TException : Exception
             {
                 Func<Exception, bool> nonGenericCondition;
@@ -80,7 +81,8 @@ namespace Micron.SqlClient.Retry
                 }
                 else
                 {
-                    nonGenericCondition = ex => condition(ex as TException);
+                    nonGenericCondition = ex =>
+                        ex is TException typedEx && condition(typedEx);
                 }
 
                 this.configuration.Condition = nonGenericCondition;
@@ -93,7 +95,7 @@ namespace Micron.SqlClient.Retry
                 this.configuration.BackoffInterval = backoff;
                 return new RetryHandler(this.configuration.RetryTimes,
                     this.configuration.BackoffInterval,
-                    this.configuration.Condition);
+                    this.configuration.Condition ?? (ex => false));
             }
 
             public IRetryHandler Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff)
@@ -102,7 +104,7 @@ namespace Micron.SqlClient.Retry
                 configureBackoff(this);
                 return new RetryHandler(this.configuration.RetryTimes,
                     this.configuration.BackoffInterval,
-                    this.configuration.Condition);
+                    this.configuration.Condition ?? (ex => false));
             }
 
             public void Interval(IntervalCalculation intervalCalculation) =>
@@ -111,7 +113,7 @@ namespace Micron.SqlClient.Retry
 
         private class ExceptionRetryConfiguration
         {
-            public Func<Exception, bool> Condition { get; set; }
+            public Func<Exception, bool>? Condition { get; set; }
 
             public RetryTimes RetryTimes { get; set; }
 
@@ -122,7 +124,7 @@ namespace Micron.SqlClient.Retry
     public interface IConditionExpression
     {
         IRetryTimesExpression OnException(Func<Exception, bool> condition);
-        IRetryTimesExpression OnException<TException>(Func<TException, bool> condition = null)
+        IRetryTimesExpression OnException<TException>(Func<TException, bool>? condition = null)
             where TException : Exception;
     }
 
