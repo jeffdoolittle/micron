@@ -2,75 +2,65 @@ namespace Micron.SqlClient.Retry
 {
     using System;
 
-    public class ConfigureRetries
+    public static class ConfigureRetries
     {
-        private readonly ExceptionRetryConfiguration configuration;
+        public static IExceptionRetryExpression OnException(Func<Exception, bool> condition) 
+            => new ExceptionRetryConfigurer().OnException(condition);
 
-        private ConfigureRetries()
-            => this.configuration = new ExceptionRetryConfiguration();
-
-        public static IExceptionRetryExpression OnException(Func<Exception, bool> condition)
-        {
-            if (condition is null)
-            {
-                throw new ArgumentNullException(nameof(condition));
-            }
-
-            var configureRetries = new ConfigureRetries();
-            configureRetries.configuration.Condition = condition;
-            var configurer = new ExceptionRetryConfigurer(configureRetries);
-            return configurer;
-        }
-
-        public static IExceptionRetryExpression OnException<TException>(Func<Exception, bool> condition = null)
-            where TException : Exception
-        {
-            if (condition is null)
-            {
-                throw new ArgumentNullException(nameof(condition));
-            }
-
-            var configureRetries = new ConfigureRetries();
-
-            condition = ex =>
-               {
-                   if (ex is TException)
-                   {
-                       return condition?.Invoke(ex as TException) ?? false;
-                   }
-                   return condition?.Invoke(ex) ?? false;
-               };
-
-            configureRetries.configuration.Condition = condition;
-            var configurer = new ExceptionRetryConfigurer(configureRetries);
-            return configurer;
-        }
+        public static IExceptionRetryExpression OnException<TException>(Func<TException, bool> condition = null)
+            where TException : Exception => new ExceptionRetryConfigurer().OnException<TException>(condition);
 
         private class ExceptionRetryConfigurer :
+            IExceptionConditionExpression,
             IExceptionRetryExpression,
             IBackoffIntervalExpression
         {
-            private readonly ConfigureRetries parent;
+            private readonly ExceptionRetryConfiguration configuration;
 
-            public ExceptionRetryConfigurer(ConfigureRetries parent)
-                => this.parent = parent;
+            public ExceptionRetryConfigurer() =>
+                this.configuration = new ExceptionRetryConfiguration();
+
+            public IExceptionRetryExpression OnException(Func<Exception, bool> condition)
+            {
+                if (condition is null)
+                {
+                    throw new ArgumentNullException(nameof(condition));
+                }
+
+                this.configuration.Condition = condition;
+                return this;
+            }
+
+            public IExceptionRetryExpression OnException<TException>(Func<TException, bool> condition = null) 
+                where TException : Exception
+            {
+                if (condition is null)
+                {
+                    throw new ArgumentNullException(nameof(condition));
+                }
+
+                condition = ex => condition?.Invoke(ex) ?? false;
+                   
+                this.configuration.Condition = ex => condition.Invoke(ex as TException);
+                return this;
+            }
 
             public IExceptionRetryConfiguration Retry(RetryTimes times, BackoffInterval backoff)
             {
-                this.parent.configuration.RetryTimes = times;
-                this.parent.configuration.BackoffInterval = backoff;
-                return this.parent.configuration;
+                this.configuration.RetryTimes = times;
+                this.configuration.BackoffInterval = backoff;
+                return this.configuration;
             }
 
             public IExceptionRetryConfiguration Retry(RetryTimes times, Action<IBackoffIntervalExpression> configureBackoff)
             {
-                this.parent.configuration.RetryTimes = times;
+                this.configuration.RetryTimes = times;
                 configureBackoff(this);
-                return this.parent.configuration;
+                return this.configuration;
             }
 
             public void Interval(IntervalCalculation intervalCalculation) =>
-                this.parent.configuration.BackoffInterval = intervalCalculation;
+                this.configuration.BackoffInterval = intervalCalculation;
         }
 
         private class ExceptionRetryConfiguration : IExceptionRetryConfiguration
@@ -88,6 +78,13 @@ namespace Micron.SqlClient.Retry
         Func<Exception, bool> Condition { get; }
         RetryTimes RetryTimes { get; }
         BackoffInterval BackoffInterval { get; }
+    }
+
+    public interface IExceptionConditionExpression
+    {
+        IExceptionRetryExpression OnException(Func<Exception, bool> condition);
+        IExceptionRetryExpression OnException<TException>(Func<TException, bool> condition = null)
+            where TException : Exception;
     }
 
     public interface IExceptionRetryExpression
