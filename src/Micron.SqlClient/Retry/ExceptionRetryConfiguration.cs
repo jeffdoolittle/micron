@@ -20,25 +20,12 @@ namespace Micron.SqlClient.Retry
             public ExceptionRetryConfigurer() =>
                 this.configuration = new ExceptionRetryConfiguration();
 
-            public IExceptionRetryExpression OnException(Func<Exception, bool> condition)
-            {
-                if (condition is null)
-                {
-                    throw new ArgumentNullException(nameof(condition));
-                }
-
-                this.configuration.Condition = condition;
-                return this;
-            }
+            public IExceptionRetryExpression OnException(Func<Exception, bool> condition = null) 
+                => this.OnException<Exception>(condition);
 
             public IExceptionRetryExpression OnException<TException>(Func<TException, bool> condition = null) 
                 where TException : Exception
             {
-                if (condition is null)
-                {
-                    throw new ArgumentNullException(nameof(condition));
-                }
-
                 Func<Exception, bool> nonGenericCondition;
 
                 if (condition == null)
