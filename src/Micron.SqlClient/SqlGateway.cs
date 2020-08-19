@@ -25,6 +25,7 @@
 
             // TODO: add retry logic in here.
             // TODO: allow cancellation tokens
+            // todo: make retry handling a function, not a configuration option. tell, don't ask!
 
             foreach (var command in commands)
             {
