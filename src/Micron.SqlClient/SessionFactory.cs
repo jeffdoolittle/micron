@@ -1,6 +1,7 @@
 namespace Micron.SqlClient
 {
     using System.Data;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Micron.SqlClient.Connect;
@@ -33,7 +34,7 @@ namespace Micron.SqlClient
         {
             var connection = this.connectionFactory.CreateConnection();
             var session = new Session(connection);
-            session.Open();
+            ((ISessionLifecycle)session).Open();
             return session;
         }
 
@@ -41,32 +42,39 @@ namespace Micron.SqlClient
         {
             var connection = this.connectionFactory.CreateConnection();
             var session = new Session(connection);
-            await session.OpenAsync(ct);
+            await ((ISessionLifecycle)session).OpenAsync(ct);
             return session;
         }
 
         public ISession OpenSession(IsolationLevel? isolationLevel = null)
         {
-            isolationLevel ??= this.defaultIsolationLevel;
             var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection, isolationLevel);
-            session.Open();
+            var session = this.CreateSession(connection, isolationLevel);
+            ((ISessionLifecycle)session).Open();
             return session;
         }
 
         public async Task<ISession> OpenSessionAsync(CancellationToken ct = default,
             IsolationLevel? isolationLevel = null)
         {
-            isolationLevel ??= this.defaultIsolationLevel;
             var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection, isolationLevel);
-            await session.OpenAsync(ct);
+            var session = this.CreateSession(connection, isolationLevel);
+            await ((ISessionLifecycle)session).OpenAsync(ct);
             return session;
+        }
+
+        private Session CreateSession(DbConnection connection, IsolationLevel? isolationLevel = null)
+        {
+            isolationLevel ??= this.defaultIsolationLevel;
+            var session = new Session(connection, isolationLevel);
+            var retryDecorator = new SessionRetryDecorator(null, session);
+            var exceptionDecorator = new SessionExceptionDecorator(retryDecorator);
+            return exceptionDecorator;
         }
     }
 
     public interface ISessionFactoryConfigurationInitExpression
     {
-        
+
     }
 }

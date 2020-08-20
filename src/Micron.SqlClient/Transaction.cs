@@ -40,5 +40,4 @@ namespace Micron.SqlClient
 
         public ValueTask DisposeAsync() => default;
     }
-
 }

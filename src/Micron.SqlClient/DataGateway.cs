@@ -39,7 +39,7 @@
                     var affected = await cmd.ExecuteNonQueryAsync(request.CancellationToken).ConfigureAwait(false);
                     if (command.ExpectedAffectedRows != affected)
                     {
-                        throw new MicronException($"Expected ${command.ExpectedAffectedRows} affected rows but returned ${affected}.");
+                        throw new RootCauseException($"Expected ${command.ExpectedAffectedRows} affected rows but returned ${affected}.");
                     }
                 }
                 await tran.CommitAsync(request.CancellationToken).ConfigureAwait(false);
@@ -61,7 +61,7 @@
                 }
                 catch (Exception ex)
                 {
-                    throw new MicronException($"Unable to convert ${value} to {typeof(T)}", ex);
+                    throw new RootCauseException($"Unable to convert ${value} to {typeof(T)}", ex);
                 }
             }
 

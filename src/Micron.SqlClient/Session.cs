@@ -1,46 +1,84 @@
 namespace Micron.SqlClient
 {
     using System;
+    using System.Collections;
     using System.Data;
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
+    using Micron.SqlClient.Connect;
 
-    internal partial class Session : ISession
+    internal partial class Session : ISession, ISessionLifecycle
     {
         private bool disposed;
-        private readonly DbConnection connection;
+        private readonly IDbConnectionFactory connectionFactory;
         private readonly IsolationLevel? isolationLevel;
+        private int retries;
+        private DbConnection connection;
         private ITransaction transaction;
 
-        internal Session(DbConnection connection, IsolationLevel? isolationLevel = null)
+        internal Session(IDbConnectionFactory connectionFactory, IsolationLevel? isolationLevel = null)
         {
-            this.connection = connection;
+            this.connectionFactory = connectionFactory;
             this.isolationLevel = isolationLevel;
+            this.connection = new NulloDbConnection();
             this.transaction = new NulloTransaction();
         }
-
-        internal void Open()
+        void ISessionLifecycle.Open()
         {
-            this.connection.Open();
+            this.Cleanup();
+
+            this.connection = this.connectionFactory.CreateConnection();
 
             if (this.isolationLevel != null)
             {
-                var dbTransaction = this.connection.BeginTransaction(this.isolationLevel.Value);
+                var dbTransaction = this.connection
+                    .BeginTransaction(this.isolationLevel.Value);
+
                 this.transaction = new DbTransactionAdapter(dbTransaction);
             }
         }
 
-        internal async Task OpenAsync(CancellationToken ct = default)
+        async Task ISessionLifecycle.OpenAsync(CancellationToken ct = default)
         {
+            await this.CleanupAsync();
+
+            this.connection = this.connectionFactory.CreateConnection();
+
             await this.connection.OpenAsync(ct).ConfigureAwait(false);
 
             if (this.isolationLevel != null)
             {
                 var dbTransaction = await this.connection
-                    .BeginTransactionAsync(this.isolationLevel.Value).ConfigureAwait(false);
+                    .BeginTransactionAsync(this.isolationLevel.Value)
+                        .ConfigureAwait(false);
+
                 this.transaction = new DbTransactionAdapter(dbTransaction);
             }
+        }
+
+        private void Cleanup()
+        {
+            if (this.retries == 0)
+            {
+                return;
+            }
+
+            this.connection.Close();
+            this.connection.Dispose();
+            this.retries++;
+        }
+
+        private async Task CleanupAsync()
+        {
+            if (this.retries == 0)
+            {
+                return;
+            }
+
+            await this.connection.CloseAsync().ConfigureAwait(false);
+            await this.connection.DisposeAsync().ConfigureAwait(false);
+            this.retries++;
         }
 
         public void Commit() => this.transaction.Commit();
@@ -78,6 +116,71 @@ namespace Micron.SqlClient
             }
 
             this.disposed = true;
+        }
+    }
+
+    internal class NulloDbConnection : DbConnection
+    {
+        private readonly NulloDbTransaction transaction;
+
+        public NulloDbConnection() =>
+            this.transaction = new NulloDbTransaction(this);
+
+        public override string ConnectionString { get; set; } = "";
+
+        public override string Database => "";
+
+        public override string DataSource => "";
+
+        public override string ServerVersion => "";
+
+        public override ConnectionState State => ConnectionState.Closed;
+
+        public override void ChangeDatabase(string databaseName)
+        {
+            // no op
+        }
+
+        public override void Close()
+        {
+            // no op
+        }
+
+        public override void Open()
+        {
+            // no op
+        }
+
+        internal DbTransaction CurrentTransaction => this.transaction;
+
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) 
+            => this.transaction;
+
+        protected override DbCommand CreateDbCommand()
+            => throw new InvalidOperationException("Non-operational for a Nullo DbConnection.");
+    }
+
+    internal class NulloDbTransaction : DbTransaction
+    {
+        private readonly NulloDbConnection connection;
+
+        public NulloDbTransaction(NulloDbConnection connection) =>
+            this.connection = connection;
+
+        public override IsolationLevel IsolationLevel =>
+            IsolationLevel.Chaos;
+
+        protected override DbConnection DbConnection => this.connection;
+
+        public override void Commit()
+        {
+            // no op
+        }
+
+        public override void Rollback()
+        {
+
+            // no op
         }
     }
 }
