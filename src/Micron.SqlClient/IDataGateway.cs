@@ -2,27 +2,35 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
     public interface IDataGateway
     {
-        void Execute(ICommandRequest command);
+        IReadResult Read(IReadRequest request);
 
-        Task ExecuteAsync(ICommandRequest command, CancellationToken ct = default);
+        IReadMultipleResult ReadMultiple(IReadRequest request);
 
         TValue Scalar<TValue>(IScalarRequest<TValue> request);
+
+        void Execute(ICommandRequest command);
+
+        void Commit();
+
+        Task<IReadResult> ReadAsync(IReadRequest request,
+            CancellationToken ct = default);
+
+        Task<IReadMultipleResult> ReadMultipleAsync(IReadRequest request,
+            CancellationToken ct = default);
 
         Task<TValue> ScalarAsync<TValue>(IScalarRequest<TValue> request,
             CancellationToken ct = default);
 
-        Task<IReadResult> ReadAsync(IReadRequest request, CancellationToken ct = default);
+        Task ExecuteAsync(ICommandRequest command,
+            CancellationToken ct = default);
 
-        IReadRequest Read(IReadRequest request);
-
-        Task<IReadMultipleResult> ReadMultipleAsync(IReadRequest request, CancellationToken ct = default);
-
-        IReadMultipleResult ReadMultiple(IReadRequest request);
+        Task CommitAsync(CancellationToken ct = default);
     }
 
     public interface IDataStatement
@@ -62,5 +70,11 @@
 
     public interface IDataResult : IReadOnlyDictionary<string, object>
     {
+    }
+
+    internal class ReadResult : IReadResult
+    {
+        public IAsyncEnumerable<IDataResult> Results { get; set; }
+            = (new IDataResult[0]).AsAsyncEnumerable();
     }
 }
