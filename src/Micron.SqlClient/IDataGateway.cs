@@ -75,6 +75,6 @@
     internal class ReadResult : IReadResult
     {
         public IAsyncEnumerable<IDataResult> Results { get; set; }
-            = (new IDataResult[0]).AsAsyncEnumerable();
+            = AsyncEnumerable.Empty<IDataResult>
     }
 }

@@ -19,9 +19,21 @@
     public class DataGateway : IDataGateway
     {
         private bool hasReturnedData = false;
+        private readonly DbConnection connection;
+        private readonly DbTransaction transaction;
+
+        public DataGateway(DbConnection connection, DbTransaction transaction)
+        {
+            this.connection = connection;
+            this.transaction = transaction;
+        }
 
         public IReadResult Read(IReadRequest request)
         {
+            using var cmd = BuildCommand(request, this.connection, this.transaction);
+            using var rdr = cmd.ExecuteReader();
+            
+
             throw new NotImplementedException();
         }
 
@@ -72,6 +84,23 @@
         public Task CommitAsync(CancellationToken ct = default)
         {
             throw new NotImplementedException();
+        }
+
+        private static DbCommand BuildCommand(IDataStatement statement,
+            DbConnection connection, DbTransaction transaction)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = statement.CommandText;
+            cmd.Transaction = transaction;
+
+            foreach (var parameter in statement.Parameters)
+            {
+                var p = cmd.CreateParameter();
+                p.Value = parameter;
+                _ = cmd.Parameters.Add(p);
+            }
+
+            return cmd;
         }
 
         // private Func<Task<DbConnection>> connectionFactory;
@@ -163,26 +192,6 @@
         //         more = await enumerator.MoveNextAsync();
         //         yield return enumerator.Current;
         //     }
-        // }
-
-        // private static DbCommand BuildCommand(IDataStatement statement,
-        //     DbConnection conn, DbTransaction tran = null)
-        // {
-        //     var cmd = conn.CreateCommand();
-        //     cmd.CommandText = statement.CommandText;
-
-        //     if (tran != null)
-        //     {
-        //         cmd.Transaction = tran;
-        //     }
-
-        //     foreach (var parameter in statement.Parameters)
-        //     {
-        //         var p = cmd.CreateParameter();
-        //         p.Value = parameter;
-        //         _ = cmd.Parameters.Add(p);
-        //     }
-        //     return cmd;
         // }
 
         // private class CommandConfigurationBuilder :

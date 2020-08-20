@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{A8EA64BC-5444-425B-BEF2-71D8B78DA8C0}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micron.SqlClient", "Micron.SqlClient\Micron.SqlClient.csproj", "{9C55B186-C5C8-4D4C-923B-05C70628311F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micron.Tests", "Micron.Tests\Micron.Tests.csproj", "{0ABDE84F-2B2F-482D-9913-E57D1AB6A54B}"
