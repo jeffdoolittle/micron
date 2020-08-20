@@ -28,26 +28,36 @@
             this.transaction = transaction;
         }
 
-        public IReadResult Read(IReadRequest request)
+        public IEnumerable<IDataRecord> Read(ReadRequest request)
         {
             using var cmd = BuildCommand(request, this.connection, this.transaction);
             using var rdr = cmd.ExecuteReader();
-            
+            while(rdr.Read())
+            {
+                yield return rdr.
+
+            }
 
             throw new NotImplementedException();
         }
 
-        public IReadMultipleResult ReadMultiple(IReadRequest request)
+        public IReadMultipleResult ReadMultiple(ReadRequest request)
         {
             throw new NotImplementedException();
         }
 
-        public TValue Scalar<TValue>(IScalarRequest<TValue> request)
+        public TValue Scalar<TValue>(ScalarRequest<TValue> request)
+            where TValue : struct
         {
             throw new NotImplementedException();
         }
 
-        public void Execute(ICommandRequest command)
+        public string Scalar(StringRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Execute(CommandRequest command)
         {
             throw new NotImplementedException();
         }
@@ -57,25 +67,31 @@
             throw new NotImplementedException();
         }
 
-        public Task<IReadResult> ReadAsync(IReadRequest request,
+        public Task<IAsyncEnumerable<IDataRecord>> ReadAsync(ReadRequest request,
             CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IReadMultipleResult> ReadMultipleAsync(IReadRequest request,
+        public Task<IAsyncReadMultipleResult> ReadMultipleAsync(ReadRequest request,
             CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TValue> ScalarAsync<TValue>(IScalarRequest<TValue> request,
+        public Task<TValue> ScalarAsync<TValue>(ScalarRequest<TValue> request,
             CancellationToken ct = default)
+                where TValue : struct
         {
             throw new NotImplementedException();
         }
 
-        public Task ExecuteAsync(ICommandRequest command,
+        public Task<string> ScalarAsync(StringRequest request, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ExecuteAsync(CommandRequest command,
             CancellationToken ct = default)
         {
             throw new NotImplementedException();
@@ -85,8 +101,8 @@
         {
             throw new NotImplementedException();
         }
-
-        private static DbCommand BuildCommand(IDataStatement statement,
+        
+        private static DbCommand BuildCommand(DataStatement statement,
             DbConnection connection, DbTransaction transaction)
         {
             var cmd = connection.CreateCommand();

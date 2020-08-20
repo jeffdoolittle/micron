@@ -2,79 +2,188 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Data;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
+    using Micron.SqlClient.Retry;
+
+    public interface ICommand
+    {
+        void Read(Action<IDataRecord> callback);
+
+        T Scalar<T>() where T : struct;
+
+        string String();
+
+        int Execute();
+
+        Task ReadAsync(Func<IDataRecord, Task> callback, CancellationToken ct = default);
+
+        Task<T> ScalarAsync<T>() where T : struct;
+
+        Task<string> StringAsync(CancellationToken ct = default);
+
+        Task<int> ExecuteAsync(CancellationToken ct = default);
+    }
+
+    public class Command : ICommand
+    {
+        private readonly IRetryHandler retryHandler;
+        private readonly DbCommand command;
+
+        public Command(IRetryHandler retryHandler, DbCommand command)
+        {
+            this.retryHandler = retryHandler;
+            this.command = command;
+        }
+
+        public void Read(Action<IDataRecord> callback) =>
+            this.retryHandler.Execute(() =>
+            {
+                using var cmd = this.command;
+                using var conn = cmd.Connection;
+                conn.Open();
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    callback(reader);
+                }
+                reader.Close();
+                conn.Close();
+            });
+
+        public T Scalar<T>() where T : struct =>
+            this.retryHandler.Execute(() =>
+            {
+                using var cmd = this.command;
+                using var conn = cmd.Connection;
+                conn.Open();
+                var value = cmd.ExecuteScalar();
+                conn.Close();
+                if (DBNull.Value.Equals(value))
+                {
+                    return default;
+                }
+                return (T)value;
+            });
+
+        public string String() =>
+            this.retryHandler.Execute(() =>
+            {
+                using var cmd = this.command;
+                using var conn = cmd.Connection;
+                conn.Open();
+                var value = cmd.ExecuteScalar();
+                conn.Close();
+                if (DBNull.Value.Equals(value))
+                {
+                    return "";
+                }
+                return (string)value;
+            });
+
+        public int Execute() => 
+            this.retryHandler.Execute(() =>
+            {
+                using var cmd = this.command;
+                using var conn = cmd.Connection;
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                conn.Close();
+                return affected;
+            });
+
+        public Task<int> ExecuteAsync(CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ReadAsync(Func<IDataRecord, Task> callback,
+            CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<T> ScalarAsync<T>() where T : struct
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> StringAsync(CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     public interface IDataGateway
     {
-        IReadResult Read(IReadRequest request);
+        IEnumerable<IDataRecord> Read(ReadRequest request);
 
-        IReadMultipleResult ReadMultiple(IReadRequest request);
+        IReadMultipleResult ReadMultiple(ReadRequest request);
 
-        TValue Scalar<TValue>(IScalarRequest<TValue> request);
+        TValue Scalar<TValue>(ScalarRequest<TValue> request)
+            where TValue : struct;
 
-        void Execute(ICommandRequest command);
+        string Scalar(StringRequest request);
 
-        void Commit();
+        void Execute(CommandRequest command);
 
-        Task<IReadResult> ReadAsync(IReadRequest request,
+        Task<IAsyncEnumerable<IDataRecord>> ReadAsync(ReadRequest request,
             CancellationToken ct = default);
 
-        Task<IReadMultipleResult> ReadMultipleAsync(IReadRequest request,
+        Task<IAsyncReadMultipleResult> ReadMultipleAsync(ReadRequest request,
             CancellationToken ct = default);
 
-        Task<TValue> ScalarAsync<TValue>(IScalarRequest<TValue> request,
+        Task<TValue> ScalarAsync<TValue>(ScalarRequest<TValue> request,
+            CancellationToken ct = default)
+                where TValue : struct;
+
+        Task<string> ScalarAsync(StringRequest request,
             CancellationToken ct = default);
 
-        Task ExecuteAsync(ICommandRequest command,
+        Task ExecuteAsync(CommandRequest command,
             CancellationToken ct = default);
-
-        Task CommitAsync(CancellationToken ct = default);
     }
 
-    public interface IDataStatement
+    public class DataStatement
     {
-        string CommandText { get; }
-        object[] Parameters { get; }
-        int TimeoutSeconds { get; }
+        public string CommandText { get; set; } = "";
+        public object[] Parameters { get; set; } = new object[0];
+        public int TimeoutSeconds { get; set; }
     }
 
-    public interface ICommand : IDataStatement
+    public class DataCommand : DataStatement
     {
-        int ExpectedAffectedRows { get; }
+        public int ExpectedAffectedRows { get; set; } = -1;
     }
 
-    public interface ICommandRequest
+    public class CommandRequest
     {
-        IEnumerable<ICommand> Commands { get; }
+        public IList<DataCommand> Commands { get; } = new List<DataCommand>();
     }
 
-    public interface IScalarRequest<T> : IDataStatement
+    public class ScalarRequest<T> : DataStatement where T : struct
     {
-        Func<object, T> Converter { get; }
+        public Func<object, T> Converter { get; set; } = _ => default;
     }
 
-    public interface IReadRequest : IDataStatement { }
-
-    public interface IReadResult
+    public class StringRequest : DataStatement
     {
-        IAsyncEnumerable<IDataResult> Results { get; }
+        public Func<object, string> Converter { get; set; } = _ => "";
     }
 
-    public interface IReadMultipleResult
+    public class ReadRequest : DataStatement { }
+
+    public interface IReadMultipleResult : IDisposable
     {
         bool NextResult();
-        IAsyncEnumerable<IDataResult> Results { get; }
+        IEnumerable<IDataRecord> Results { get; }
     }
 
-    public interface IDataResult : IReadOnlyDictionary<string, object>
+    public interface IAsyncReadMultipleResult : IDisposable, IAsyncDisposable
     {
-    }
-
-    internal class ReadResult : IReadResult
-    {
-        public IAsyncEnumerable<IDataResult> Results { get; set; }
-            = AsyncEnumerable.Empty<IDataResult>
+        bool NextResult();
+        IAsyncEnumerable<IDataRecord> Results { get; }
     }
 }

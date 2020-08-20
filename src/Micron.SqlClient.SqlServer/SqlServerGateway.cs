@@ -12,7 +12,7 @@
 
         }
 
-        public Task Execute(params ICommand[] commands)
+        public Task Execute(params DataCommand[] commands)
         {
             throw new NotImplementedException();
         }

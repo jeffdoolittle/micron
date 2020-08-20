@@ -6,42 +6,42 @@ namespace Micron.SqlClient
 
     internal partial class Session 
     {
-        public void Execute(ICommandRequest command)
+        public void Execute(CommandRequest command)
         {
             throw new NotImplementedException();
         }
 
-        public Task ExecuteAsync(ICommandRequest command, CancellationToken ct = default)
+        public Task ExecuteAsync(CommandRequest command, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public IReadRequest Read(IReadRequest request)
+        public ReadRequest Read(ReadRequest request)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IReadResult> ReadAsync(IReadRequest request, CancellationToken ct = default)
+        public Task<IReadResult> ReadAsync(ReadRequest request, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public IReadMultipleResult ReadMultiple(IReadRequest request)
+        public IReadMultipleResult ReadMultiple(ReadRequest request)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IReadMultipleResult> ReadMultipleAsync(IReadRequest request, CancellationToken ct = default)
+        public Task<IReadMultipleResult> ReadMultipleAsync(ReadRequest request, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public TValue Scalar<TValue>(IScalarRequest<TValue> request)
+        public TValue Scalar<TValue>(ScalarRequest<TValue> request)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TValue> ScalarAsync<TValue>(IScalarRequest<TValue> request, CancellationToken ct = default)
+        public Task<TValue> ScalarAsync<TValue>(ScalarRequest<TValue> request, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
