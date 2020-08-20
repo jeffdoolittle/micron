@@ -32,24 +32,21 @@ namespace Micron.SqlClient
 
         public IReadOnlySession OpenReadOnly()
         {
-            var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection);
+            var session = new Session(this.connectionFactory);
             ((ISessionLifecycle)session).Open();
             return session;
         }
 
         public async Task<IReadOnlySession> OpenReadOnlyAsync(CancellationToken ct = default)
         {
-            var connection = this.connectionFactory.CreateConnection();
-            var session = new Session(connection);
+            var session = this.CreateSession();
             await ((ISessionLifecycle)session).OpenAsync(ct);
             return session;
         }
 
         public ISession OpenSession(IsolationLevel? isolationLevel = null)
         {
-            var connection = this.connectionFactory.CreateConnection();
-            var session = this.CreateSession(connection, isolationLevel);
+            var session = this.CreateSession(isolationLevel);
             ((ISessionLifecycle)session).Open();
             return session;
         }
@@ -57,16 +54,15 @@ namespace Micron.SqlClient
         public async Task<ISession> OpenSessionAsync(CancellationToken ct = default,
             IsolationLevel? isolationLevel = null)
         {
-            var connection = this.connectionFactory.CreateConnection();
-            var session = this.CreateSession(connection, isolationLevel);
+            var session = this.CreateSession(isolationLevel);
             await ((ISessionLifecycle)session).OpenAsync(ct);
             return session;
         }
 
-        private Session CreateSession(DbConnection connection, IsolationLevel? isolationLevel = null)
+        private Session CreateSession(IsolationLevel? isolationLevel = null)
         {
             isolationLevel ??= this.defaultIsolationLevel;
-            var session = new Session(connection, isolationLevel);
+            var session = new Session(this.connectionFactory, isolationLevel);
             var retryDecorator = new SessionRetryDecorator(null, session);
             var exceptionDecorator = new SessionExceptionDecorator(retryDecorator);
             return exceptionDecorator;
