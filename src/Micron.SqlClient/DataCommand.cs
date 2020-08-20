@@ -21,193 +21,149 @@ namespace Micron.SqlClient
         public void Read(Action<IDataRecord> callback,
             CommandBehavior behavior = CommandBehavior.Default)
         {
-            using var cmd = this.command;
-            using var conn = cmd.Connection;
-
-            try
+            Unit exec(DbCommand cmd)
             {
-                this.retryHandler.Execute(() =>
+                using var reader = cmd.ExecuteReader(behavior);
+
+                while (reader.Read())
                 {
-                    conn.Open();
+                    callback(reader);
+                }
 
-                    using var reader = cmd.ExecuteReader(behavior);
+                reader.Close();
 
-                    while (reader.Read())
-                    {
-                        callback(reader);
-                    }
-
-                    reader.Close();
-                });
+                return Unit.Default;
             }
-            finally
-            {
-                conn.Close();
-            }
+
+            _ = this.Try(exec);
         }
 
         public T Scalar<T>() where T : struct
         {
-            using var cmd = this.command;
-            using var conn = cmd.Connection;
-
-            try
+            static T exec(DbCommand cmd)
             {
-                return this.retryHandler.Execute(() =>
-                {
-                    conn.Open();
+                var value = cmd.ExecuteScalar();
 
-                    var value = cmd.ExecuteScalar();
+                return !DBNull.Value.Equals(value) ? (T)value : default;
+            }
 
-                    return !DBNull.Value.Equals(value) ? (T)value : default;
-                });
-            }
-            finally
-            {
-                conn.Close();
-            }
+            return this.Try(exec);
         }
 
         public string String()
         {
-            using var cmd = this.command;
-            using var conn = cmd.Connection;
-
-            try
+            static string exec(DbCommand cmd)
             {
-                return this.retryHandler.Execute(() =>
-                {
-                    conn.Open();
+                var value = cmd.ExecuteScalar();
 
-                    var value = cmd.ExecuteScalar();
+                return !DBNull.Value.Equals(value) ? (string)value : "";
+            }
 
-                    return !DBNull.Value.Equals(value) ? (string)value : "";
-                });
-            }
-            finally
-            {
-                conn.Close();
-            }
+            return this.Try(exec);
         }
 
         public int Execute()
         {
-            using var cmd = this.command;
-            using var conn = cmd.Connection;
-
-            try
-            {
-                return this.retryHandler.Execute(() =>
-                {
-                    conn.Open();
-
-                    var affected = cmd.ExecuteNonQuery();
-
-                    return affected;
-                });
-            }
-            finally
-            {
-                conn.Close();
-            }
+            static int exec(DbCommand cmd) => cmd.ExecuteNonQuery();
+            return this.Try(exec);
         }
 
         public async Task ReadAsync(Func<IDataRecord, Task> callback,
             CommandBehavior behavior = CommandBehavior.Default,
             CancellationToken ct = default)
         {
-            using var cmd = this.command;
-            using var conn = this.command.Connection;
-
-            try
+            async Task<Unit> exec(DbCommand cmd, CancellationToken ct)
             {
-                await this.retryHandler.ExecuteAsync(async () =>
+                using var reader = await cmd.ExecuteReaderAsync(behavior, ct)
+                    .ConfigureAwait(false);
+
+                while (await reader.ReadAsync(ct).ConfigureAwait(false))
                 {
-                    await conn.OpenAsync(ct).ConfigureAwait(false);
+                    await callback(reader).ConfigureAwait(false);
+                }
 
-                    using var reader = await cmd.ExecuteReaderAsync(behavior, ct)
-                        .ConfigureAwait(false);
+                await reader.CloseAsync().ConfigureAwait(false);
 
-                    while (await reader.ReadAsync(ct).ConfigureAwait(false))
-                    {
-                        await callback(reader).ConfigureAwait(false);
-                    }
-
-                    await reader.CloseAsync().ConfigureAwait(false);
-
-                }).ConfigureAwait(false);
+                return Unit.Default;
             }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-            }
+
+            _ = await this.Try(ct, exec).ConfigureAwait(false);
         }
 
         public async Task<T> ScalarAsync<T>(CancellationToken ct = default)
             where T : struct
         {
-            using var cmd = this.command;
-            using var conn = this.command.Connection;
-
-            try
+            static async Task<T> exec(DbCommand cmd, CancellationToken ct)
             {
-                return await this.retryHandler.ExecuteAsync(async () =>
-                {
-                    await conn.OpenAsync(ct).ConfigureAwait(false);
+                var value = await cmd.ExecuteScalarAsync(ct)
+                    .ConfigureAwait(false);
 
-                    var value = await cmd.ExecuteScalarAsync(ct)
-                        .ConfigureAwait(false);
-
-                    return !DBNull.Value.Equals(value) ? (T)value : default;
-
-                }).ConfigureAwait(false);
+                return !DBNull.Value.Equals(value) ? (T)value : default;
             }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-            }
+
+            return await this.Try(ct, exec).ConfigureAwait(false);
         }
 
         public async Task<string> StringAsync(CancellationToken ct = default)
         {
-            using var cmd = this.command;
-            using var conn = this.command.Connection;
-
-            try
+            static async Task<string> exec(DbCommand cmd, CancellationToken ct)
             {
-                return await this.retryHandler.ExecuteAsync(async () =>
-                {
-                    await conn.OpenAsync(ct).ConfigureAwait(false);
+                var value = await cmd.ExecuteScalarAsync(ct)
+                    .ConfigureAwait(false);
 
-                    var value = await cmd.ExecuteScalarAsync(ct)
-                        .ConfigureAwait(false);
-
-                    return !DBNull.Value.Equals(value) ? (string)value : "";
-
-                }).ConfigureAwait(false);
+                return !DBNull.Value.Equals(value) ? (string)value : "";
             }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-            }
+
+            return await this.Try(ct, exec).ConfigureAwait(false);
         }
 
         public async Task<int> ExecuteAsync(CancellationToken ct = default)
+        {
+            static Task<int> exec(DbCommand cmd, CancellationToken ct) =>
+                cmd.ExecuteNonQueryAsync(ct);
+
+            return await this.Try(ct, exec).ConfigureAwait(false);
+        }
+
+        private T Try<T>(Func<DbCommand, T> exec)
         {
             using var cmd = this.command;
             using var conn = this.command.Connection;
 
             try
             {
+                return this.retryHandler.Execute(() =>
+               {
+                   conn.Open();
+
+                   return exec(cmd);
+               });
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
+
+        private async Task<T> Try<T>(CancellationToken ct,
+            Func<DbCommand, CancellationToken, Task<T>> exec)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            using var cmd = this.command;
+            using var conn = this.command.Connection;
+
+            try
+            {
                 return await this.retryHandler.ExecuteAsync(async () =>
-                {
-                    await conn.OpenAsync(ct).ConfigureAwait(false);
+               {
+                   ct.ThrowIfCancellationRequested();
 
-                    var affected = await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                   await conn.OpenAsync(ct).ConfigureAwait(false);
 
-                    return affected;
+                   return await exec(cmd, ct).ConfigureAwait(false);
 
-                }).ConfigureAwait(false);
+               }).ConfigureAwait(false);
             }
             finally
             {
@@ -216,3 +172,5 @@ namespace Micron.SqlClient
         }
     }
 }
+
+// todo: handle multiple commands in a transaction

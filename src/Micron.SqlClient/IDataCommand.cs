@@ -7,6 +7,8 @@ namespace Micron.SqlClient
 
     public interface IDataCommand
     {
+        void Multiple___();
+
         void Read(Action<IDataRecord> callback, 
             CommandBehavior behavior = CommandBehavior.Default);
 
