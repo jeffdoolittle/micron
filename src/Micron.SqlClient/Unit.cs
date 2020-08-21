@@ -16,10 +16,12 @@ namespace Micron.SqlClient
 
         public override string? ToString() => "()";
 
-        [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "first", Justification = "Parameter required for operator overloading."), Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "second", Justification = "Parameter required for operator overloading.")]
+        [SuppressMessage("Style", "IDE0060:Remove unused parameter",
+            Justification = "Unit is always equal to itself.")]
         public static bool operator ==(Unit a, Unit b) => true;
 
-        [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "first", Justification = "Parameter required for operator overloading."), Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "second", Justification = "Parameter required for operator overloading.")]
+        [SuppressMessage("Style", "IDE0060:Remove unused parameter",
+            Justification = "Unit is never unequal to itself.")]
         public static bool operator !=(Unit a, Unit b) => false;
     }
 }
