@@ -8,7 +8,7 @@
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
 
-    public class DbCommandHandlerDecorator : IDbCommandHandler
+    internal class DbCommandHandlerDecorator : IDbCommandHandler
     {
         private readonly IDbCommandHandler inner;
         private readonly ILogger<IDbCommandHandler> logger;

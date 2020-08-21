@@ -9,7 +9,7 @@
     using System.Threading.Tasks;
     using Micron.SqlClient.Retry;
 
-    public class DbCommandHandler : IDbCommandHandler
+    internal class DbCommandHandler : IDbCommandHandler
     {
         private readonly IRetryHandler retryHandler;
 
@@ -177,6 +177,8 @@
             CancellationToken ct = default,
             Func<int, int, Task>? resultIndexAndAffectedCallback = null)
         {
+            ct.ThrowIfCancellationRequested();
+
             if (commands.Length == 0)
             {
                 return;
