@@ -43,11 +43,6 @@
         public int TimeoutSeconds { get; set; }
     }
 
-    // public class DataCommand : DataStatement
-    // {
-    //     public int ExpectedAffectedRows { get; set; } = -1;
-    // }
-
     public class CommandRequest
     {
         public IList<DbCommandHandler> Commands { get; } = new List<DbCommandHandler>();

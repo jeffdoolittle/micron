@@ -134,7 +134,7 @@
 
                 return Unit.Default;
             }
-
+            
             _ = await this.TryAsync(command, ct, exec).ConfigureAwait(false);
         }
 
