@@ -1,4 +1,4 @@
-namespace Micron.SqlClient.Retry
+namespace Micron.Core.Retry
 {
     using System.Threading.Tasks;
     using Xunit;

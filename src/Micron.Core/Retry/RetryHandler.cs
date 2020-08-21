@@ -1,4 +1,4 @@
-namespace Micron.SqlClient.Retry
+namespace Micron.Core.Retry
 {
     using System;
     using System.Linq;
@@ -87,10 +87,14 @@ namespace Micron.SqlClient.Retry
             } while (true);
         }
 
-        public static IRetryTimesExpression OnException(Func<Exception, bool> condition)
-                  => new RetryConfigurer().OnException(condition);
+        public static IRetryTimesExpression Configure(Action<IConditionExpression> configure)
+        {
+            var configurer = new RetryConfigurer();
+            configure(configurer);
+            return configurer;
+        }
 
-        public static IRetryTimesExpression OnException<TException>(Func<TException, bool>? condition = null)
+        public static IRetryTimesExpression Configure<TException>(Func<TException, bool>? condition = null)
             where TException : Exception =>
                 new RetryConfigurer().OnException(condition);
 

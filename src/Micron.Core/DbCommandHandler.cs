@@ -1,4 +1,4 @@
-﻿namespace Micron.SqlClient
+﻿namespace Micron.Core
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +7,7 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Micron.SqlClient.Retry;
+    using Micron.Core.Retry;
 
     internal class DbCommandHandler : IDbCommandHandler
     {

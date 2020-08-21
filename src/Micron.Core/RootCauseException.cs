@@ -1,4 +1,4 @@
-namespace Micron.SqlClient
+namespace Micron.Core
 {
     using System;
 

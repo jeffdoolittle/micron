@@ -1,4 +1,4 @@
-﻿// namespace Micron.SqlClient.Sqlite
+﻿// namespace Micron.Core.Sqlite
 // {
 //     using System.Data.Common;
 //     using System.Threading.Tasks;

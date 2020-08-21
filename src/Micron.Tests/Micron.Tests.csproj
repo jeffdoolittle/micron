@@ -6,9 +6,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Micron.SqlClient\Micron.SqlClient.csproj" />
-    <ProjectReference Include="..\Micron.SqlClient.Sqlite\Micron.SqlClient.Sqlite.csproj" />
-    <ProjectReference Include="..\Micron.SqlClient.SqlServer\Micron.SqlClient.SqlServer.csproj" />
+    <ProjectReference Include="..\Micron.Core\Micron.Core.csproj" />
+    <ProjectReference Include="..\Micron.Sqlite\Micron.Sqlite.csproj" />
+    <ProjectReference Include="..\Micron.SqlServer\Micron.SqlServer.csproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

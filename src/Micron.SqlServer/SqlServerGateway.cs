@@ -1,4 +1,4 @@
-﻿// namespace Micron.SqlClient.SqlServer
+﻿// namespace Micron.Core.SqlServer
 // {
 //     using System;
 //     using System.Collections.Generic;
