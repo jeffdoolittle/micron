@@ -12,7 +12,7 @@
 
         }
 
-        public Task Execute(params DataCommand[] commands)
+        public Task Execute(params DbCommandHandler[] commands)
         {
             throw new NotImplementedException();
         }

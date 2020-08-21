@@ -50,7 +50,7 @@
 
     public class CommandRequest
     {
-        public IList<DataCommand> Commands { get; } = new List<DataCommand>();
+        public IList<DbCommandHandler> Commands { get; } = new List<DbCommandHandler>();
     }
 
     public class ScalarRequest<T> : DataStatement where T : struct
