@@ -1,4 +1,4 @@
-﻿ namespace Micron.SqlClient
+﻿namespace Micron.SqlClient
 {
     using System;
     using System.Data;
@@ -22,14 +22,19 @@
 
         public int Execute(DbCommand command)
         {
-            this.logger.LogDebug("Executing command {CommandText}.", command.CommandText);
+            int exec()
+            {
+                this.logger.LogDebug("Executing command {CommandText}.", command.CommandText);
 
-            var affected = this.inner.Execute(command);
+                var affected = this.inner.Execute(command);
 
-            this.logger.LogInformation("Executed command {CommandText} affecting {Affected} rows.", 
-                command.CommandText, affected);
+                this.logger.LogInformation("Executed command {CommandText} affecting {Affected} rows.",
+                    command.CommandText, affected);
 
-            return affected;
+                return affected;
+            }
+
+            return Try.To(exec);
         }
 
         public Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default)
