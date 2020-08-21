@@ -5,17 +5,31 @@
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Logging.Abstractions;
 
     public class DbCommandHandlerDecorator : IDbCommandHandler
     {
-        public DbCommandHandlerDecorator(IDbCommandHandler inner)
-        {
+        private readonly IDbCommandHandler inner;
+        private readonly ILogger<IDbCommandHandler> logger;
 
+        public DbCommandHandlerDecorator(IDbCommandHandler inner,
+            ILogger<IDbCommandHandler> logger)
+        {
+            this.inner = inner;
+            this.logger = logger ?? NullLogger<IDbCommandHandler>.Instance;
         }
 
         public int Execute(DbCommand command)
         {
-            throw new NotImplementedException();
+            this.logger.LogDebug("Executing command {CommandText}.", command.CommandText);
+
+            var affected = this.inner.Execute(command);
+
+            this.logger.LogInformation("Executed command {CommandText} affecting {Affected} rows.", 
+                command.CommandText, affected);
+
+            return affected;
         }
 
         public Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default)
