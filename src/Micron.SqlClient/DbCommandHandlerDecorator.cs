@@ -20,6 +20,55 @@
             this.logger = logger ?? NullLogger<IDbCommandHandler>.Instance;
         }
 
+        public void Read(DbCommand command, Action<IDataRecord> callback, CommandBehavior behavior = CommandBehavior.Default)
+        {
+            void exec()
+            {
+                this.logger.LogDebug("Reading from command {CommandText} with {CommandBehavior}.",
+                    command.CommandText, behavior);
+
+                this.inner.Read(command, callback, behavior);
+
+                this.logger.LogInformation("Read from command {CommandText} with {CommandBehavior}.");
+            }
+
+            Try.To(exec, this.logger);
+        }
+
+        public T Scalar<T>(DbCommand command) where T : struct
+        {
+            T exec()
+            {
+                this.logger.LogDebug("Retrieving scalar from command {CommandText}.",
+                    command.CommandText);
+
+                var scalar = this.inner.Scalar<T>(command);
+
+                this.logger.LogInformation("Retrieved scalar from command {CommandText}.");
+
+                return scalar;
+            }
+
+            return Try.To(exec, this.logger);
+        }
+
+        public string String(DbCommand command)
+        {
+            string exec()
+            {
+                this.logger.LogDebug("Retrieving string from command {CommandText}.",
+                    command.CommandText);
+
+                var scalar = this.inner.String(command);
+
+                this.logger.LogInformation("Retrieved string from command {CommandText}.");
+
+                return scalar;
+            }
+
+            return Try.To(exec, this.logger);
+        }
+
         public int Execute(DbCommand command)
         {
             int exec()
@@ -34,25 +83,25 @@
                 return affected;
             }
 
-            return Try.To(exec);
+            return Try.To(exec, this.logger);
         }
 
-        public Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default)
+        public void Transaction(DbCommand[] commands, Action<int, int>? resultIndexAndAffectedCallback = null)
         {
-            throw new NotImplementedException();
-        }
+            void exec()
+            {
+                this.logger.LogDebug("Performing transaction for {CommandCount} commands.", commands.Length);
 
-        public void Read(DbCommand command, Action<IDataRecord> callback, CommandBehavior behavior = CommandBehavior.Default)
-        {
-            throw new NotImplementedException();
+                this.inner.Transaction(commands, resultIndexAndAffectedCallback);
+
+                this.logger.LogInformation("Performed transaction for {CommandCount} commands.",
+                    commands.Length);
+            }
+
+            Try.To(exec, this.logger);
         }
 
         public Task ReadAsync(DbCommand command, Func<IDataRecord, Task> callback, CommandBehavior behavior = CommandBehavior.Default, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public T Scalar<T>(DbCommand command) where T : struct
         {
             throw new NotImplementedException();
         }
@@ -62,17 +111,12 @@
             throw new NotImplementedException();
         }
 
-        public string String(DbCommand command)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<string> StringAsync(DbCommand command, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public void Transaction(DbCommand[] commands, Action<int, int>? resultIndexAndAffectedCallback = null)
+        public Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
