@@ -130,10 +130,10 @@ namespace Micron.Retry
                 return this;
             }
 
-            public IRetryHandler Retry(RetryTimes times, BackoffInterval backoff)
+            public IRetryHandler Retry(RetryTimes times, BackoffInterval? backoff)
             {
                 this.configuration.RetryTimes = times;
-                this.configuration.BackoffInterval = backoff;
+                this.configuration.BackoffInterval = backoff ?? BackoffInterval.MinBackoffMilliseconds;
                 return new RetryHandler(this.configuration.RetryTimes,
                     this.configuration.BackoffInterval,
                     this.configuration.Condition ?? (ex => false));
@@ -171,7 +171,7 @@ namespace Micron.Retry
 
     public interface IRetryTimesExpression
     {
-        IRetryHandler Retry(RetryTimes times, BackoffInterval backoff);
+        IRetryHandler Retry(RetryTimes times, BackoffInterval? backoff = null);
 
         IRetryHandler Retry(RetryTimes times,
             Action<IBackoffIntervalExpression> configureBackoff);
