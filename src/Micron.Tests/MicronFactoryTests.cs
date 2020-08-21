@@ -14,43 +14,23 @@ namespace Micron.Tests
         public void Can_configure_micron_factory()
         {
             var factory = Wireup.Micron(_ => _
-                // .SQLite("connection string configuration key")
-                .SQLite(() => "connection-string")
-                .Connection<SQLiteConnectionStringBuilder>(builder => 
-                    builder.DateTimeFormat = SQLiteDateFormats.ISO8601)
-                .Retry(retry => retry.OnException<SQLiteException>().Retry(3))
-                .Logger(() => NullLogger.Instance)                
+                .SQLite(() => "connection-string") // or key from configuration
+                .LogTo(NullLogger.Instance)
+                .Build<SQLiteConnectionStringBuilder>(builder =>
+                    {
+                        builder.DateTimeFormat = SQLiteDateFormats.ISO8601;
+                        builder.DateTimeKind = DateTimeKind.Utc;
+                        builder.DefaultTimeout = 5;
+                    })
+                .Retry(retry => retry
+                    .OnException<SQLiteException>(condition => true)
+                    .Retry(3))
+                .Command<SQLiteCommand>(cmd => cmd.CommandTimeout = 5)
             );
 
 
 
             Console.WriteLine();
-
-            // var factory = new MicronFactory();
-
-
-            // static void exec(Action<IMicronFactoryConfigurationRootExpression> micron)
-            // {
-            // }
-
-            // exec(micron => micron
-            //     .Provider(() => SQLiteFactory.Instance)
-            //     .Connect(() => "")
-            //     .Builder(() => new SQLiteConnectionStringBuilder())
-            // );
-
-            // exec(micron => micron
-            //     .SQLite()
-            // .Provider(() => SQLiteFactory.Instance)
-            // .Connect(() => "")
-            // .Builder(() => new SQLiteConnectionStringBuilder())
-            // );
-
-
-            // specify provider and connections string builder types
-            // configure retry logic
-            // configure logging
-            // configure other default values?
         }
     }
 
@@ -62,34 +42,48 @@ namespace Micron.Tests
         }
     }
 
-    public interface IMicronWireup
-    {
-
-    }
-
-    public interface IMicronConfigurer
-    {
-        IMicronConfigurer Connection<TBuilder>(Action<TBuilder> configure)
-            where TBuilder : DbConnectionStringBuilder;
-
-        IMicronConfigurer Retry(Func<IConditionExpression, IRetryHandler> configure);
-
-        IMicronConfigurer Logger(Func<ILogger> logger);
-
-    }
-
     public static class SQLiteMicronFactoryExtensions
     {
         public static IMicronConfigurer SQLite(this IMicronWireup wireup, Func<string> connectionStringFunction)
         {
+            wireup.Provider(new SQLiteFactory());
+            wireup.ConnectionString(connectionStringFunction);
+
             return null;
         }
 
         public static IMicronConfigurer SQLite(this IMicronWireup wireup, string connectionStringConfigurationKey = "Default")
         {
+            wireup.Provider(new SQLiteFactory());
+            wireup.ConnectionConfigurationKey(connectionStringConfigurationKey);
+
             return null;
         }
     }
+
+    public interface IMicronWireup
+    {
+        void Provider<TProvider>(TProvider provider) where TProvider : DbProviderFactory;
+
+        void ConnectionString(Func<string> connectionStringFunction);
+
+        void ConnectionConfigurationKey(string connectionConfigurationKey);
+    }
+
+    public interface IMicronConfigurer
+    {
+        IMicronConfigurer Build<TBuilder>(Action<TBuilder> configure)
+            where TBuilder : DbConnectionStringBuilder;
+
+        IMicronConfigurer Retry(Func<IConditionExpression, IRetryHandler> configure);
+
+        IMicronConfigurer LogTo(ILogger logger);
+
+        IMicronConfigurer Command<TDbCommand>(Action<TDbCommand> pipeline)
+            where TDbCommand : DbCommand;
+    }
+
+
 
     // public abstract class DbConnectionConfigurer
     // {
