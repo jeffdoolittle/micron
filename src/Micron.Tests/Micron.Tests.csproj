@@ -6,7 +6,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Micron.Core\Micron.Core.csproj" />
+    <ProjectReference Include="..\Micron\Micron.csproj" />
     <ProjectReference Include="..\Micron.Sqlite\Micron.Sqlite.csproj" />
     <ProjectReference Include="..\Micron.SqlServer\Micron.SqlServer.csproj" />
   </ItemGroup>

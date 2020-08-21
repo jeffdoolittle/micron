@@ -1,4 +1,4 @@
-namespace Micron.Core
+namespace Micron
 {
     public interface IDbCommandHandlerFactory
     {

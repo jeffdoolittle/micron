@@ -1,4 +1,4 @@
-namespace Micron.Core.Retry
+namespace Micron.Retry
 {
     using System.Threading.Tasks;
     using Xunit;

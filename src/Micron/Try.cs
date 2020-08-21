@@ -1,4 +1,4 @@
-namespace Micron.Core
+namespace Micron
 {
     using System;
     using System.Threading.Tasks;
