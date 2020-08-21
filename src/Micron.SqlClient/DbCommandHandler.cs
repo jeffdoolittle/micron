@@ -210,16 +210,17 @@
                     {
                         foreach (var result in results)
                         {
-                            await resultIndexAndAffectedCallback(result.Key, result.Value);
+                            await resultIndexAndAffectedCallback(result.Key, 
+                                result.Value).ConfigureAwait(false);
                         }
                     }
 
-                    await tran.CommitAsync(ct);
-                });
+                    await tran.CommitAsync(ct).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
             finally
             {
-                await conn.CloseAsync();
+                await conn.CloseAsync().ConfigureAwait(false);
             }
         }
 
