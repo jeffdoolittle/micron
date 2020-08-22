@@ -16,7 +16,7 @@ namespace Micron.Tests
             var factory = Wireup.Micron(_ => _
                 .SQLite(() => "connection-string") // or key from configuration
                 .LogTo(NullLogger.Instance)
-                .Build<SQLiteConnectionStringBuilder>(builder =>
+                .Build(builder =>
                     {
                         builder.DateTimeFormat = SQLiteDateFormats.ISO8601;
                         builder.DateTimeKind = DateTimeKind.Utc;
@@ -25,7 +25,7 @@ namespace Micron.Tests
                 .Retry(retry => retry
                     .OnException<SQLiteException>(condition => true)
                     .Retry(3))
-                .Command<SQLiteCommand>(cmd => cmd.CommandTimeout = 5)
+                .Command(cmd => cmd.CommandTimeout = 5)
             );
 
 
@@ -39,18 +39,6 @@ namespace Micron.Tests
 
     }
 
-    public static class SQLiteProvider
-    {
-        public static IMicronWireup<SQLiteFactory> LogTo(ILogger logger)
-        {
-            var wireup = new SqliteMicronWireup
-            {
-                Logger = logger
-            };
-
-            return wireup;
-        }
-    }
 
     public static class Wireup
     {
@@ -62,7 +50,8 @@ namespace Micron.Tests
 
     public static class SQLiteMicronFactoryExtensions
     {
-        public static IMicronConfigurer SQLite(this IMicronWireup wireup, Func<string> connectionStringFunction)
+        public static ISQLiteMicronConfigurer SQLite(
+            this IMicronWireup wireup, Func<string> connectionStringFunction)
         {
             wireup.Provider(new SQLiteFactory());
             wireup.ConnectionString(connectionStringFunction);
@@ -70,7 +59,8 @@ namespace Micron.Tests
             return null;
         }
 
-        public static IMicronConfigurer SQLite(this IMicronWireup wireup, string connectionStringConfigurationKey = "Default")
+        public static ISQLiteMicronConfigurer SQLite(
+            this IMicronWireup wireup, string connectionStringConfigurationKey = "Default")
         {
             wireup.Provider(new SQLiteFactory());
             wireup.ConnectionConfigurationKey(connectionStringConfigurationKey);
@@ -80,7 +70,8 @@ namespace Micron.Tests
     }
 
 
-    public interface ISQLiteMicronConfigurer
+    public interface ISQLiteMicronConfigurer :
+        IMicronConfigurer<SQLiteConnectionStringBuilder, SQLiteCommand, SQLiteException>
     {
 
     }

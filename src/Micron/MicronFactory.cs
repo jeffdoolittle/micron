@@ -21,6 +21,11 @@ namespace Micron
 
     }
 
+    public interface IMicronProvider<TProvider> 
+        where TProvider : DbProviderFactory
+    {
+
+    }
 
 
     public abstract class MicronWireup<TProvider> : IMicronWireup<TProvider>
@@ -47,17 +52,22 @@ namespace Micron
     }
 
 
-    public interface IMicronConfigurer
+    public interface IMicronConfigurer<TBuilder, TDbCommand, TDbException>
+        where TBuilder : DbConnectionStringBuilder
+        where TDbCommand : DbCommand
+        where TDbException : DbException
     {
-        IMicronConfigurer Build<TBuilder>(Action<TBuilder> configure)
-            where TBuilder : DbConnectionStringBuilder;
+        IMicronConfigurer<TBuilder, TDbCommand, TDbException> Build(
+            Action<TBuilder> configure);
 
-        IMicronConfigurer Retry(Func<IConditionExpression, IRetryHandler> configure);
+        IMicronConfigurer<TBuilder, TDbCommand, TDbException> OnException(
+            Func<IConditionExpression, IRetryHandler> configure);
 
-        IMicronConfigurer LogTo(ILogger logger);
+        IMicronConfigurer<TBuilder, TDbCommand, TDbException> LogTo(
+            ILogger logger);
 
-        IMicronConfigurer Command<TDbCommand>(Action<TDbCommand> pipeline)
-            where TDbCommand : DbCommand;
+        IMicronConfigurer<TBuilder, TDbCommand, TDbException> Command(
+            Action<TDbCommand> pipeline);
     }
 
 }
