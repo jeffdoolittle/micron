@@ -34,6 +34,33 @@ namespace Micron.Tests
         }
     }
 
+    public abstract class MicronWireup<TProvider> : IMicronWireup<TProvider> 
+        where TProvider : DbProviderFactory
+    {
+
+    }
+
+    public class SqliteMicronWireup : MicronWireup<SQLiteFactory>
+    {
+
+    }
+
+    public static class SQLiteProvider
+    {
+        public static IMicronWireup<SQLiteFactory> LogTo(ILogger logger)
+        { 
+            var wireup = new SqliteMicronWireup();
+
+            return wireup;
+        }
+    }
+
+    public interface IMicronWireup<TProvider> 
+        where TProvider : DbProviderFactory
+    {
+
+    }
+
     public static class Wireup
     {
         public static IMicronFactory Micron(Action<IMicronWireup> configure)
@@ -68,6 +95,11 @@ namespace Micron.Tests
         void ConnectionString(Func<string> connectionStringFunction);
 
         void ConnectionConfigurationKey(string connectionConfigurationKey);
+    }
+
+    public interface ISQLiteMicronConfigurer
+    {
+
     }
 
     public interface IMicronConfigurer
