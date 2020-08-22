@@ -34,12 +34,6 @@ namespace Micron.Tests
         }
     }
 
-    public abstract class MicronWireup<TProvider> : IMicronWireup<TProvider> 
-        where TProvider : DbProviderFactory
-    {
-
-    }
-
     public class SqliteMicronWireup : MicronWireup<SQLiteFactory>
     {
 
@@ -48,17 +42,14 @@ namespace Micron.Tests
     public static class SQLiteProvider
     {
         public static IMicronWireup<SQLiteFactory> LogTo(ILogger logger)
-        { 
-            var wireup = new SqliteMicronWireup();
+        {
+            var wireup = new SqliteMicronWireup
+            {
+                Logger = logger
+            };
 
             return wireup;
         }
-    }
-
-    public interface IMicronWireup<TProvider> 
-        where TProvider : DbProviderFactory
-    {
-
     }
 
     public static class Wireup
@@ -88,34 +79,11 @@ namespace Micron.Tests
         }
     }
 
-    public interface IMicronWireup
-    {
-        void Provider<TProvider>(TProvider provider) where TProvider : DbProviderFactory;
-
-        void ConnectionString(Func<string> connectionStringFunction);
-
-        void ConnectionConfigurationKey(string connectionConfigurationKey);
-    }
 
     public interface ISQLiteMicronConfigurer
     {
 
     }
-
-    public interface IMicronConfigurer
-    {
-        IMicronConfigurer Build<TBuilder>(Action<TBuilder> configure)
-            where TBuilder : DbConnectionStringBuilder;
-
-        IMicronConfigurer Retry(Func<IConditionExpression, IRetryHandler> configure);
-
-        IMicronConfigurer LogTo(ILogger logger);
-
-        IMicronConfigurer Command<TDbCommand>(Action<TDbCommand> pipeline)
-            where TDbCommand : DbCommand;
-    }
-
-
 
     // public abstract class DbConnectionConfigurer
     // {
