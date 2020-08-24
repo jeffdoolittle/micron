@@ -7,15 +7,9 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Micron.Retry;
 
     internal class DbCommandHandler : IDbCommandHandler
     {
-        private readonly IRetryHandler retryHandler;
-
-        public DbCommandHandler(IRetryHandler retryHandler) =>
-            this.retryHandler = retryHandler;
-
         public void Read(DbCommand command,
             Action<IDataRecord> callback,
             CommandBehavior behavior = CommandBehavior.Default)
@@ -84,31 +78,28 @@
 
             try
             {
-                this.retryHandler.Execute(attempt =>
+                var results = new Dictionary<int, int>();
+
+                conn.Open();
+                using var tran = conn.BeginTransaction();
+
+                for (var i = 0; i < commands.Length; i++)
                 {
-                    var results = new Dictionary<int, int>();
+                    var cmd = commands[i];
+                    cmd.Transaction = tran;
+                    var affected = cmd.ExecuteNonQuery();
+                    results.Add(i, affected);
+                }
 
-                    conn.Open();
-                    using var tran = conn.BeginTransaction();
-
-                    for (var i = 0; i < commands.Length; i++)
+                if (resultIndexAndAffectedCallback != null)
+                {
+                    foreach (var result in results)
                     {
-                        var cmd = commands[i];
-                        cmd.Transaction = tran;
-                        var affected = cmd.ExecuteNonQuery();
-                        results.Add(i, affected);
+                        resultIndexAndAffectedCallback(result.Key, result.Value);
                     }
+                }
 
-                    if (resultIndexAndAffectedCallback != null)
-                    {
-                        foreach (var result in results)
-                        {
-                            resultIndexAndAffectedCallback(result.Key, result.Value);
-                        }
-                    }
-
-                    tran.Commit();
-                });
+                tran.Commit();
             }
             finally
             {
@@ -193,32 +184,29 @@
 
             try
             {
-                await this.retryHandler.ExecuteAsync(async attempt =>
+                var results = new Dictionary<int, int>();
+
+                conn.Open();
+                using var tran = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
+
+                for (var i = 0; i < commands.Length; i++)
                 {
-                    var results = new Dictionary<int, int>();
+                    var cmd = commands[i];
+                    cmd.Transaction = tran;
+                    var affected = await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    results.Add(i, affected);
+                }
 
-                    conn.Open();
-                    using var tran = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
-
-                    for (var i = 0; i < commands.Length; i++)
+                if (resultIndexAndAffectedCallback != null)
+                {
+                    foreach (var result in results)
                     {
-                        var cmd = commands[i];
-                        cmd.Transaction = tran;
-                        var affected = await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                        results.Add(i, affected);
+                        await resultIndexAndAffectedCallback(result.Key,
+                            result.Value).ConfigureAwait(false);
                     }
+                }
 
-                    if (resultIndexAndAffectedCallback != null)
-                    {
-                        foreach (var result in results)
-                        {
-                            await resultIndexAndAffectedCallback(result.Key,
-                                result.Value).ConfigureAwait(false);
-                        }
-                    }
-
-                    await tran.CommitAsync(ct).ConfigureAwait(false);
-                }).ConfigureAwait(false);
+                await tran.CommitAsync(ct).ConfigureAwait(false);
             }
             finally
             {
@@ -233,12 +221,9 @@
 
             try
             {
-                return this.retryHandler.Execute(attempt =>
-                {
-                    conn.Open();
+                conn.Open();
 
-                    return exec(cmd);
-                });
+                return exec(cmd);
             }
             finally
             {
@@ -250,22 +235,17 @@
             CancellationToken ct,
             Func<DbCommand, CancellationToken, Task<T>> exec)
         {
-            ct.ThrowIfCancellationRequested();
-
             using var cmd = command;
             using var conn = command.Connection;
 
             try
             {
-                return await this.retryHandler.ExecuteAsync(async attempt =>
-                {
-                    ct.ThrowIfCancellationRequested();
+                ct.ThrowIfCancellationRequested();
 
-                    await conn.OpenAsync(ct).ConfigureAwait(false);
+                await conn.OpenAsync(ct).ConfigureAwait(false);
 
-                    return await exec(cmd, ct).ConfigureAwait(false);
+                return await exec(cmd, ct).ConfigureAwait(false);
 
-                }).ConfigureAwait(false);
             }
             finally
             {
