@@ -1,7 +1,5 @@
 namespace Micron
 {
-    using System;
-    using System.Data.Common;
     using Micron.Retry;
     using Microsoft.Extensions.Logging;
 
