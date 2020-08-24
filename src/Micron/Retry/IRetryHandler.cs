@@ -5,12 +5,12 @@ namespace Micron.Retry
 
     public interface IRetryHandler
     {
-        void Execute(Action action);
+        void Execute(Action<int> action);
 
-        Task ExecuteAsync(Func<Task> action);
+        Task ExecuteAsync(Func<int, Task> action);
 
-        T Execute<T>(Func<T> function);
+        T Execute<T>(Func<int, T> function);
 
-        Task<T> ExecuteAsync<T>(Func<Task<T>> function);
+        Task<T> ExecuteAsync<T>(Func<int, Task<T>> function);
     }
 }

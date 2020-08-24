@@ -26,7 +26,7 @@ namespace Micron
         {
             var handler = new DbCommandHandler(this.retryHandler);
 
-            var decorated = new DbCommandHandlerDecorator(handler,
+            var decorated = new DbCommandHandlerExceptionDecorator(handler,
                 this.commandConfigurationPipeline,
                 this.logger);
 

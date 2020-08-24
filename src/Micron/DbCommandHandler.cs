@@ -234,11 +234,11 @@
             try
             {
                 return this.retryHandler.Execute(() =>
-               {
-                   conn.Open();
+                {
+                    conn.Open();
 
-                   return exec(cmd);
-               });
+                    return exec(cmd);
+                });
             }
             finally
             {
@@ -258,14 +258,14 @@
             try
             {
                 return await this.retryHandler.ExecuteAsync(async () =>
-               {
-                   ct.ThrowIfCancellationRequested();
+                {
+                    ct.ThrowIfCancellationRequested();
 
-                   await conn.OpenAsync(ct).ConfigureAwait(false);
+                    await conn.OpenAsync(ct).ConfigureAwait(false);
 
-                   return await exec(cmd, ct).ConfigureAwait(false);
+                    return await exec(cmd, ct).ConfigureAwait(false);
 
-               }).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
             finally
             {

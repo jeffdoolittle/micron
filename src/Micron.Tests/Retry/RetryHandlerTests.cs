@@ -10,7 +10,7 @@ namespace Micron.Retry
         public async Task Can_create_a_retry_handler()
         {
             var handler = new RetryHandler(5, 1000, ex => true);
-            await handler.ExecuteAsync(() => Task.CompletedTask);
+            await handler.ExecuteAsync(tries => Task.CompletedTask);
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Micron.Retry
         {
             var count = 0;
 
-            Task exec()
+            Task exec(int attempts)
             {
                 count++;
                 return Task.CompletedTask;
@@ -56,7 +56,7 @@ namespace Micron.Retry
             var tries = 0;
             var max = RetryTimes.MaxRetries;
 
-            Task exec()
+            Task exec(int attempts)
             {
                 tries++;
 
@@ -81,7 +81,7 @@ namespace Micron.Retry
             static bool canHandle(Exception ex) => ex is InvalidOperationException;
 
             var tries = 0;
-            Task exec()
+            Task exec(int attempts)
             {
                 tries++;
 
@@ -104,7 +104,7 @@ namespace Micron.Retry
             static bool canHandle(Exception ex) => ex is InvalidOperationException;
 
             var tries = 0;
-            Task exec()
+            Task exec(int attempts)
             {
                 tries++;
                 throw new Exception();
@@ -123,7 +123,7 @@ namespace Micron.Retry
                 .Catch<ArgumentNullException>(ex => true)
                 .Retry(5, 50);
 
-            await handler.ExecuteAsync(() => Task.CompletedTask);
+            await handler.ExecuteAsync(attempts => Task.CompletedTask);
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace Micron.Retry
                 .Catch<ArgumentNullException>()
                 .Retry(5, calc);
 
-            await handler.ExecuteAsync(() => Task.CompletedTask);
+            await handler.ExecuteAsync(attempts => Task.CompletedTask);
         }
     }
 }

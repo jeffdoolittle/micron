@@ -25,21 +25,21 @@ namespace Micron.Retry
             this.conditions = conditions;
         }
 
-        public void Execute(Action action) =>
-            _ = this.Execute(() =>
+        public void Execute(Action<int> action) =>
+            _ = this.Execute(tries =>
                 {
-                    action();
+                    action(tries);
                     return Task.CompletedTask;
                 });
 
-        public T Execute<T>(Func<T> function)
+        public T Execute<T>(Func<int, T> function)
         {
             var tries = 0;
             do
             {
                 try
                 {
-                    return function();
+                    return function(tries);
                 }
                 catch (Exception ex)
                 {
@@ -56,21 +56,21 @@ namespace Micron.Retry
             } while (true);
         }
 
-        public async Task ExecuteAsync(Func<Task> action) =>
-            _ = await this.ExecuteAsync(async () =>
+        public async Task ExecuteAsync(Func<int, Task> action) =>
+            _ = await this.ExecuteAsync(async tries =>
                 {
-                    await action();
+                    await action(tries);
                     return Unit.Default;
                 });
 
-        public async Task<T> ExecuteAsync<T>(Func<Task<T>> function)
+        public async Task<T> ExecuteAsync<T>(Func<int, Task<T>> function)
         {
             var tries = 0;
             do
             {
                 try
                 {
-                    return await function().ConfigureAwait(false);
+                    return await function(tries).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
