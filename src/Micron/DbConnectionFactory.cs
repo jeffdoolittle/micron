@@ -28,4 +28,9 @@ namespace Micron
             return connection;
         }
     }
+
+    public interface IDbConnectionFactory
+    {
+        DbConnection CreateConnection();
+    }
 }

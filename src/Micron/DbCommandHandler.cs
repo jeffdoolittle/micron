@@ -75,7 +75,7 @@
                 return;
             }
 
-            if (commands.Select(c => c.Connection).Distinct().Count() != 1)
+            if (commands.Select(c => c.Connection.ConnectionString).Distinct().Count() != 1)
             {
                 throw new RootCauseException("All commands must share the same connection.");
             }
@@ -134,7 +134,7 @@
 
                 return Unit.Default;
             }
-            
+
             _ = await this.TryAsync(command, ct, exec).ConfigureAwait(false);
         }
 
@@ -184,7 +184,7 @@
                 return;
             }
 
-            if (commands.Select(c => c.Connection).Distinct().Count() != 1)
+            if (commands.Select(c => c.Connection.ConnectionString).Distinct().Count() != 1)
             {
                 throw new RootCauseException("All commands must share the same connection.");
             }
@@ -212,7 +212,7 @@
                     {
                         foreach (var result in results)
                         {
-                            await resultIndexAndAffectedCallback(result.Key, 
+                            await resultIndexAndAffectedCallback(result.Key,
                                 result.Value).ConfigureAwait(false);
                         }
                     }
