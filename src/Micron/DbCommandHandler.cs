@@ -84,7 +84,7 @@
 
             try
             {
-                this.retryHandler.Execute(() =>
+                this.retryHandler.Execute(attempt =>
                 {
                     var results = new Dictionary<int, int>();
 
@@ -193,7 +193,7 @@
 
             try
             {
-                await this.retryHandler.ExecuteAsync(async () =>
+                await this.retryHandler.ExecuteAsync(async attempt =>
                 {
                     var results = new Dictionary<int, int>();
 
@@ -233,7 +233,7 @@
 
             try
             {
-                return this.retryHandler.Execute(() =>
+                return this.retryHandler.Execute(attempt =>
                 {
                     conn.Open();
 
@@ -257,7 +257,7 @@
 
             try
             {
-                return await this.retryHandler.ExecuteAsync(async () =>
+                return await this.retryHandler.ExecuteAsync(async attempt =>
                 {
                     ct.ThrowIfCancellationRequested();
 

@@ -83,6 +83,8 @@ namespace Micron.Retry
             var tries = 0;
             Task exec(int attempts)
             {
+                Assert.Equal(tries, attempts);
+
                 tries++;
 
                 if (tries < RetryTimes.MaxRetries)
