@@ -19,6 +19,8 @@
             var factory = new DbCommandHandlerFactory(retry, logger, configurer);
 
             var handler = factory.Build();
+
+            Assert.NotNull(handler);
         }
     }
 }
