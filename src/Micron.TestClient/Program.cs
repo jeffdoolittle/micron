@@ -1,12 +1,21 @@
-﻿using System;
-
-namespace Micron.TestClient
+﻿namespace Micron.TestClient
 {
-    class Program
+    using System;
+
+    public class Program
     {
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            if (args?.Length < 2)
+            {
+                return 1;
+            }
+
+            var verb = args[0];
+            var noun = args[1];
+
+
+
         }
     }
 }
