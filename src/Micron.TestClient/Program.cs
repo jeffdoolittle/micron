@@ -39,20 +39,83 @@
                 "title.ratings"
             };
 
-            var downloaders = fileNames.Select(x => new Downloader(client, x + ".tsv.gz"));
-            var downloadTasks = downloaders.Select(x => x.DownloadAsync());
+            // var downloaders = fileNames.Select(x => new Downloader(client, x + ".tsv.gz"));
+            // var downloadTasks = downloaders.Select(x => x.DownloadAsync());
 
-            await Task.WhenAll(downloadTasks);
+            // await Task.WhenAll(downloadTasks);
 
-            downloaders.ToList().ForEach(d => d.Dispose());
+            // downloaders.ToList().ForEach(d => d.Dispose());
 
+            var titlesFile = new FileInfo("title.basics.tsv");
+            using var fs = titlesFile.OpenRead();
+            using var rdr = new StreamReader(fs);
 
+            var cts = new CancellationTokenSource(100);
 
+            do
+            {
+                var line = await rdr.ReadLineAsync();
+                if (line == null)
+                {
+                    break;
+                }
+                Console.WriteLine(line);
 
-
+                cts.Token.ThrowIfCancellationRequested();
+            }
+            while (true);
 
             return 0;
         }
+    }
+
+    public class ImdbConst
+    {
+        public ImdbConst(string value)
+        {
+            if (value.Any(c => !char.IsLetterOrDigit(c)))
+            {
+                throw new ArgumentException("Value must contain only alphanumeric characters", nameof(value));
+            }
+        }
+    }
+
+    public class TitleTsvRow
+    {
+        public string TitleId { get; set; }
+        public string TitleType { get; set; }
+        public string PrimaryTitle { get; set; }
+        public string OriginalTitle { get; set; }
+        public bool IsAdult { get; set; }
+        public string StartYear { get; set; }
+        public string EndYear { get; set; }
+        public int RuntimeMinutes { get; set; }
+        public string GenresArray { get; set; }
+    }
+
+    public class TitleDbRow
+    {
+        public string TitleId { get; set; }
+        public string TitleType { get; set; }
+        public string PrimaryTitle { get; set; }
+        public string OriginalTitle { get; set; }
+        public bool IsAdult { get; set; }
+        public string StartYear { get; set; }
+        public string EndYear { get; set; }
+        public int RuntimeMinutes { get; set; }
+        public string GenresArray { get; set; }
+    }
+
+    public class TitleAkasDbRow
+    {
+        public string TitleId { get; set; }
+        public int Ordering { get; set; }
+        public string Title { get; set; }
+        public string Region { get; set; }
+        public string Language { get; set; }
+        public string TypesArray { get; set; }
+        public string AttributesArray { get; set; }
+        public int IsOriginalTitle { get; set; }
     }
 
     public class Downloader : IDisposable
