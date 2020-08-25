@@ -130,7 +130,7 @@
             {
                 read = await gzip.ReadAsync(buffer, 0, chunk);
                 await dataStream.WriteAsync(buffer, 0, read);
-            } while(read == chunk);
+            } while (read > 0);
         }
 
         public void Dispose() => this.response?.Dispose();
