@@ -354,3 +354,7 @@ MigrationBackup/
 
 # Code Coverage Output
 lcov.info
+
+# Data Files
+*.tsv.gz
+*.gz

@@ -2,8 +2,10 @@
 {
     using System;
     using System.IO;
+    using System.IO.Compression;
     using System.Linq;
     using System.Net.Http;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -28,27 +30,31 @@
 
             var fileNames = new[]
             {
-                "name.basics.tsv.gz",
-                "title.akas.tsv.gz",
-                "title.basics.tsv.gz",
-                "title.crew.tsv.gz",
-                "title.episode.tsv.gz",
-                "title.principals.tsv.gz",
-                "title.ratings.tsv.gz"
+                "name.basics",
+                "title.akas",
+                "title.basics",
+                "title.crew",
+                "title.episode",
+                "title.principals",
+                "title.ratings"
             };
 
-            var downloaders = fileNames.Select(x => new Downloader(client, x));
+            var downloaders = fileNames.Select(x => new Downloader(client, x + ".tsv.gz"));
             var downloadTasks = downloaders.Select(x => x.DownloadAsync());
 
             await Task.WhenAll(downloadTasks);
 
             downloaders.ToList().ForEach(d => d.Dispose());
 
-            Console.Write("Successfully downloaded IMDB data files.");
+
+
+
+
 
             return 0;
         }
     }
+
     public class Downloader : IDisposable
     {
         private readonly HttpClient client;
@@ -63,8 +69,36 @@
 
         public async Task DownloadAsync()
         {
-            var fileInfo = new FileInfo(this.fileName);
+            var archiveFile = new FileInfo(this.fileName);
+            var dataFile = new FileInfo(this.fileName.Replace(".gz", ""));
 
+            if (archiveFile.Exists)
+            {
+                var expiry = TimeSpan.FromDays(1);
+                var age = DateTimeOffset.UtcNow - archiveFile.LastWriteTimeUtc;
+                if (age < expiry)
+                {
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.WriteLine($"File cache not expired. Skipping download of {this.fileName}.");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    await this.DoDownload(archiveFile);
+                }
+            }
+
+            if (dataFile.Exists)
+            {
+                dataFile.Delete();
+            }
+
+            await this.UnGzip(archiveFile, dataFile);
+
+        }
+
+        private async Task DoDownload(FileInfo fileInfo)
+        {
             this.response = await this.client.GetAsync(this.fileName);
 
             if (this.response.IsSuccessStatusCode && fileInfo.Exists)
@@ -72,7 +106,7 @@
                 fileInfo.Delete();
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Write($"Deleted existing file {this.fileName}");
+                Console.WriteLine($"Deleted existing file {this.fileName}");
                 Console.ResetColor();
             }
 
@@ -80,6 +114,23 @@
             await using var fs = File.Create(fileInfo.FullName);
             _ = ms.Seek(0, SeekOrigin.Begin);
             ms.CopyTo(fs);
+        }
+
+        private async Task UnGzip(FileInfo archiveFile, FileInfo dataFile)
+        {
+            using var archiveStream = archiveFile.OpenRead();
+            using var gzip = new GZipStream(archiveStream, CompressionMode.Decompress);
+            using var dataStream = dataFile.OpenWrite();
+
+            const int chunk = 4096;
+            var read = 0;
+            var buffer = new byte[chunk];
+
+            do
+            {
+                read = await gzip.ReadAsync(buffer, 0, chunk);
+                await dataStream.WriteAsync(buffer, 0, read);
+            } while(read == chunk);
         }
 
         public void Dispose() => this.response?.Dispose();
