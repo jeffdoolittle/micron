@@ -356,5 +356,5 @@ MigrationBackup/
 lcov.info
 
 # Data Files
-*.tsv.gz
+*.tsv
 *.gz
