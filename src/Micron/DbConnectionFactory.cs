@@ -1,6 +1,5 @@
 namespace Micron
 {
-    using System;
     using System.Data.Common;
 
     public class DbConnectionFactory<TProviderFactory, TBuilder> :
@@ -9,28 +8,28 @@ namespace Micron
         where TBuilder : DbConnectionStringBuilder
     {
         private readonly TProviderFactory providerFactory;
-        private readonly TBuilder builder;
+
+        protected TBuilder ConnectionStringBuilder { get; }
 
         public DbConnectionFactory(
             TProviderFactory providerFactory,
-            Action<TBuilder> build)
+            TBuilder connectionStringBuilder)
         {
             this.providerFactory = providerFactory;
-            this.builder = (TBuilder)providerFactory.CreateConnectionStringBuilder();
-            build(this.builder);
+            this.ConnectionStringBuilder = connectionStringBuilder;
         }
 
         public DbConnection CreateConnection()
         {
-            var connectionString = this.builder.ConnectionString;
-            var connection = this.providerFactory.CreateConnection();
+            var connectionString = this.ConnectionStringBuilder
+                .ConnectionString;
+
+            var connection = this.providerFactory
+                .CreateConnection();
+
             connection.ConnectionString = connectionString;
+
             return connection;
         }
-    }
-
-    public interface IDbConnectionFactory
-    {
-        DbConnection CreateConnection();
     }
 }
