@@ -50,7 +50,6 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var cts = new CancellationTokenSource(5000);
             var firstLine = false;
 
             do
@@ -67,33 +66,45 @@
                     continue;
                 }
 
-                var tsvRow = TitleTsvRow.FromLine(line);
-                Console.WriteLine(tsvRow);
+                TitleTsvRow? tsvRow = null;
+                TitleDbRow? dbRow = null;
 
-                var row = new TitleDbRow
+                try
                 {
-                    TitleId = tsvRow.TitleId,
-                    TitleType = tsvRow.TitleType,
-                    PrimaryTitle = tsvRow.PrimaryTitle,
-                    OriginalTitle = tsvRow.OriginalTitle,
-                    IsAdult = tsvRow.IsAdult == "1",
-                    StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
-                        ? (int?)null
-                        : Convert.ToInt32(tsvRow.StartYear),
-                    EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
-                        ? (int?)null
-                        : Convert.ToInt32(tsvRow.EndYear),
-                    RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
-                        ? (int?)null
-                        : Convert.ToInt32(tsvRow.RuntimeMinutes),
-                    GenresCsv = tsvRow.GenresArray
-                };
-                Console.WriteLine(row);
 
-                if (cts.Token.IsCancellationRequested)
-                {
-                    break;
+                    tsvRow = TitleTsvRow.FromLine(line);
+
+                    dbRowrow = new TitleDbRow
+                    {
+                        TitleId = tsvRow.TitleId,
+                        TitleType = tsvRow.TitleType,
+                        PrimaryTitle = tsvRow.PrimaryTitle,
+                        OriginalTitle = tsvRow.OriginalTitle,
+                        IsAdult = tsvRow.IsAdult == "1",
+                        StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
+                            ? (int?)null
+                            : Convert.ToInt32(tsvRow.StartYear),
+                        EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
+                            ? (int?)null
+                            : Convert.ToInt32(tsvRow.EndYear),
+                        RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
+                            ? (int?)null
+                            : Convert.ToInt32(tsvRow.RuntimeMinutes),
+                        GenresCsv = tsvRow.GenresArray
+                    };
                 }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine(tsvRow);
+                    Console.WriteLine(dbRow);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(ex);
+                    Console.ResetColor();
+
+                    return 1;
+                }
+
             }
             while (true);
 
