@@ -50,7 +50,7 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var cts = new CancellationTokenSource(100);
+            var cts = new CancellationTokenSource(50);
 
             do
             {
@@ -82,28 +82,28 @@
 
     public class TitleTsvRow
     {
-        public string TitleId { get; set; }
-        public string TitleType { get; set; }
-        public string PrimaryTitle { get; set; }
-        public string OriginalTitle { get; set; }
+        public string? TitleId { get; set; }
+        public string? TitleType { get; set; }
+        public string? PrimaryTitle { get; set; }
+        public string? OriginalTitle { get; set; }
         public bool IsAdult { get; set; }
-        public string StartYear { get; set; }
-        public string EndYear { get; set; }
+        public string? StartYear { get; set; }
+        public string? EndYear { get; set; }
         public int RuntimeMinutes { get; set; }
-        public string GenresArray { get; set; }
+        public string? GenresArray { get; set; }
     }
 
     public class TitleDbRow
     {
-        public string TitleId { get; set; }
-        public string TitleType { get; set; }
-        public string PrimaryTitle { get; set; }
-        public string OriginalTitle { get; set; }
+        public string? TitleId { get; set; }
+        public string? TitleType { get; set; }
+        public string? PrimaryTitle { get; set; }
+        public string? OriginalTitle { get; set; }
         public bool IsAdult { get; set; }
-        public string StartYear { get; set; }
-        public string EndYear { get; set; }
+        public string? StartYear { get; set; }
+        public string? EndYear { get; set; }
         public int RuntimeMinutes { get; set; }
-        public string GenresArray { get; set; }
+        public string? GenresArray { get; set; }
     }
 
     public class TitleAkasDbRow
