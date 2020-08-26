@@ -18,8 +18,8 @@ namespace Micron.Retry
 
             var interval = new BackoffInterval(calc);
 
-            // the BackoffInterval constructor validates the intervalCalculation 
-            // function, which increments callCount. Reset it here to validate 
+            // the BackoffInterval constructor validates the intervalCalculation
+            // function, which increments callCount. Reset it here to validate
             // the number of actual backoff retries.
             callCount = 0;
 
