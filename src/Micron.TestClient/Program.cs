@@ -77,7 +77,9 @@
                     PrimaryTitle = tsvRow.PrimaryTitle,
                     OriginalTitle = tsvRow.OriginalTitle,
                     IsAdult = tsvRow.IsAdult == "1",
-                    StartYear = Convert.ToInt32(tsvRow.StartYear),
+                    StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
+                        ? (int?)null
+                        : Convert.ToInt32(tsvRow.StartYear),
                     EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
                         ? (int?)null
                         : Convert.ToInt32(tsvRow.EndYear),
@@ -174,7 +176,7 @@
         public string? PrimaryTitle { get; set; }
         public string? OriginalTitle { get; set; }
         public bool IsAdult { get; set; }
-        public int StartYear { get; set; }
+        public int? StartYear { get; set; }
         public int? EndYear { get; set; }
         public int? RuntimeMinutes { get; set; }
         public string? GenresCsv { get; set; }
