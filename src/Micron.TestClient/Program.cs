@@ -50,7 +50,7 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var cts = new CancellationTokenSource(200);
+            var cts = new CancellationTokenSource(5000);
             var firstLine = false;
 
             do
