@@ -67,7 +67,26 @@
                     continue;
                 }
 
-                var row = TitleTsvRow.FromLine(line);
+                var tsvRow = TitleTsvRow.FromLine(line);
+                Console.WriteLine(tsvRow);
+
+                var row = new TitleDbRow
+                {
+                    TitleId = tsvRow.TitleId,
+                    TitleType = tsvRow.TitleType,
+                    PrimaryTitle = tsvRow.PrimaryTitle,
+                    OriginalTitle = tsvRow.OriginalTitle,
+                    IsAdult = tsvRow.IsAdult == "1",
+                    StartYear = Convert.ToInt32(tsvRow.StartYear),
+                    EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
+                        ? (int?)null
+                        : Convert.ToInt32(tsvRow.EndYear),
+                    RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
+                        ? (int?)null
+                        : Convert.ToInt32(tsvRow.RuntimeMinutes),
+                    GenresCsv = tsvRow.GenresArray
+                };
+                Console.WriteLine(row);
 
                 if (cts.Token.IsCancellationRequested)
                 {
@@ -91,7 +110,7 @@
         public override bool Equals(object? obj) =>
             ReferenceEquals(obj, this) || (obj is ImdbNull);
 
-        public static bool IsImdbNull(string value) =>
+        public static bool IsImdbNull(string? value) =>
             value != null && value == @"\N";
 
         public override int GetHashCode() => 0;
@@ -140,6 +159,12 @@
             row.GenresArray = parts[p++];
             return row;
         }
+
+        public override string ToString() =>
+            string.Join("\t",
+                this.TitleId, this.TitleType, this.PrimaryTitle,
+                this.OriginalTitle, this.IsAdult, this.StartYear,
+                this.EndYear, this.RuntimeMinutes, this.GenresArray);
     }
 
     public class TitleDbRow
@@ -149,22 +174,16 @@
         public string? PrimaryTitle { get; set; }
         public string? OriginalTitle { get; set; }
         public bool IsAdult { get; set; }
-        public string? StartYear { get; set; }
-        public string? EndYear { get; set; }
-        public int RuntimeMinutes { get; set; }
-        public string? GenresArray { get; set; }
-    }
+        public int StartYear { get; set; }
+        public int? EndYear { get; set; }
+        public int? RuntimeMinutes { get; set; }
+        public string? GenresCsv { get; set; }
 
-    public class TitleAkasDbRow
-    {
-        public string? TitleId { get; set; }
-        public int Ordering { get; set; }
-        public string? Title { get; set; }
-        public string? Region { get; set; }
-        public string? Language { get; set; }
-        public string? TypesArray { get; set; }
-        public string? AttributesArray { get; set; }
-        public int IsOriginalTitle { get; set; }
+        public override string ToString() =>
+            string.Join("\t",
+                this.TitleId, this.TitleType, this.PrimaryTitle,
+                this.OriginalTitle, this.IsAdult, this.StartYear,
+                this.EndYear, this.RuntimeMinutes, this.GenresCsv);
     }
 
     public class Downloader : IDisposable
