@@ -50,7 +50,8 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var cts = new CancellationTokenSource(50);
+            var cts = new CancellationTokenSource(200);
+            var firstLine = false;
 
             do
             {
@@ -59,14 +60,45 @@
                 {
                     break;
                 }
-                Console.WriteLine(line);
 
-                cts.Token.ThrowIfCancellationRequested();
+                if (!firstLine)
+                {
+                    firstLine = true;
+                    continue;
+                }
+
+                var row = TitleTsvRow.FromLine(line);
+
+                if (cts.Token.IsCancellationRequested)
+                {
+                    break;
+                }
             }
             while (true);
 
             return 0;
         }
+    }
+
+    public class ImdbNull
+    {
+        public static readonly ImdbNull Instance = new ImdbNull();
+
+        public static readonly string NullString = @"\N";
+
+        private ImdbNull() { }
+
+        public override bool Equals(object? obj) =>
+            ReferenceEquals(obj, this) || (obj is ImdbNull);
+
+        public static bool IsImdbNull(string value) =>
+            value != null && value == @"\N";
+
+        public override int GetHashCode() => 0;
+        public override string? ToString() => NullString;
+
+        public static implicit operator string(ImdbNull value) =>
+            value?.ToString() ?? NullString;
     }
 
     public class ImdbConst
@@ -86,11 +118,28 @@
         public string? TitleType { get; set; }
         public string? PrimaryTitle { get; set; }
         public string? OriginalTitle { get; set; }
-        public bool IsAdult { get; set; }
+        public string? IsAdult { get; set; }
         public string? StartYear { get; set; }
         public string? EndYear { get; set; }
-        public int RuntimeMinutes { get; set; }
+        public string? RuntimeMinutes { get; set; }
         public string? GenresArray { get; set; }
+
+        public static TitleTsvRow FromLine(string tsvLine)
+        {
+            var row = new TitleTsvRow();
+            var parts = tsvLine.Split("\t");
+            var p = 0;
+            row.TitleId = parts[p++];
+            row.TitleType = parts[p++];
+            row.PrimaryTitle = parts[p++];
+            row.OriginalTitle = parts[p++];
+            row.IsAdult = parts[p++];
+            row.StartYear = parts[p++];
+            row.EndYear = parts[p++];
+            row.RuntimeMinutes = parts[p++];
+            row.GenresArray = parts[p++];
+            return row;
+        }
     }
 
     public class TitleDbRow
@@ -108,13 +157,13 @@
 
     public class TitleAkasDbRow
     {
-        public string TitleId { get; set; }
+        public string? TitleId { get; set; }
         public int Ordering { get; set; }
-        public string Title { get; set; }
-        public string Region { get; set; }
-        public string Language { get; set; }
-        public string TypesArray { get; set; }
-        public string AttributesArray { get; set; }
+        public string? Title { get; set; }
+        public string? Region { get; set; }
+        public string? Language { get; set; }
+        public string? TypesArray { get; set; }
+        public string? AttributesArray { get; set; }
         public int IsOriginalTitle { get; set; }
     }
 
