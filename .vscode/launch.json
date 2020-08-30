@@ -5,18 +5,31 @@
    "version": "0.2.0",
    "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Execute Test Suite",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Micron.Tests/bin/Debug/net5.0/Micron.Tests.dll",
+            "program": "${workspaceFolder}/src/Micron.Tests/bin/Debug/netcoreapp3.1/Micron.Tests.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/Micron.Tests",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
         },
+        {
+          "name": "Execute Test Client",
+          "type": "coreclr",
+          "request": "launch",
+          "preLaunchTask": "build",
+          // If you have changed target frameworks, make sure to update the program path.
+          "program": "${workspaceFolder}/src/Micron.TestClient/bin/Debug/netcoreapp3.1/Micron.TestClient.dll",
+          "args": [],
+          "cwd": "${workspaceFolder}/src/Micron.TestClient",
+          // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+          "console": "internalConsole",
+          "stopAtEntry": false
+      },
         {
             "name": ".NET Core Attach",
             "type": "coreclr",
