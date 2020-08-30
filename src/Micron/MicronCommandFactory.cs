@@ -4,18 +4,6 @@
     using System.Collections.Generic;
     using System.Data;
 
-    public class MicronCommandHandlerFactory : IMicronCommandHandlerFactory
-    {
-        public MicronCommandHandlerFactory()
-        {
-        }
-
-        public IMicronCommandHandler Build()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class MicronCommandFactory : IMicronCommandFactory
     {
         // private static readonly MicronCommandCache Cache =

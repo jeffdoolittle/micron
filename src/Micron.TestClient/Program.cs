@@ -70,26 +70,14 @@
             var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=:memory:"));
             var commandFactory = new MicronCommandFactory();
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
-            var handlerFactory = new DbCommandHandlerFactory(retry, logger);
-            var commandHandler = handlerFactory.Build();
+            var dbCommandHandlerFactory = new DbCommandHandlerFactory(retry, logger);
+            var commandHandlerFactory = new MicronCommandHandlerFactory(connectionFactory, dbCommandHandlerFactory);
+            var handler = commandHandlerFactory.Build();
 
-            var micronCommand = commandFactory.CreateCommand("");
-
-            using var conn = connectionFactory.CreateConnection();
-            await conn.OpenAsync(ct);
             var script = new SQLiteSchemaBuilder().CreateTables();
+            var micronCommand = commandFactory.CreateCommand(script);
 
-            // this sucks
-            // should not have to go so low lever. handler factory should handle micron commands, not db commands
-
-            using var dbCommand = conn.CreateCommand();
-            dbCommand.CommandText = script;
-
-            _ = dbCommand.ExecuteNonQueryAsync(ct);
-
-            // micronCommand.MapTo(dbCommand);
-            // _ = await commandHandler.ExecuteAsync(dbCommand, ct);
-
+            _ = await handler.ExecuteAsync(micronCommand, ct);
 
             Console.WriteLine("Executed ddl.");
             return 2;
