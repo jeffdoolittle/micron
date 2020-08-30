@@ -2,6 +2,16 @@ namespace Micron
 {
     using System.Data.Common;
 
+    public static class DbConnectionFactory
+    {
+        public static DbConnectionFactory<TProviderFactory, TBuilder> Create<TProviderFactory, TBuilder>(
+            TProviderFactory providerFactory,
+            TBuilder connectionStringBuilder)
+            where TProviderFactory : DbProviderFactory
+            where TBuilder : DbConnectionStringBuilder =>
+                new DbConnectionFactory<TProviderFactory, TBuilder>(providerFactory, connectionStringBuilder);
+    }
+
     public class DbConnectionFactory<TProviderFactory, TBuilder> :
         IDbConnectionFactory
         where TProviderFactory : DbProviderFactory

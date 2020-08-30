@@ -12,12 +12,12 @@ namespace Micron
         public DbCommandHandlerFactory(
             IRetryHandler retryHandler,
             ILogger<IDbCommandHandler> logger,
-            IDbCommandConfigurer commandConfigurer
+            IDbCommandConfigurer? commandConfigurer = null
             )
         {
             this.retryHandler = retryHandler;
             this.logger = logger;
-            this.commandConfigurer = commandConfigurer;
+            this.commandConfigurer = commandConfigurer ?? new DbCommandConfigurerPipeline(cmd => cmd);
         }
 
         public IDbCommandHandler Build()

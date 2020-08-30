@@ -2,6 +2,7 @@ namespace Micron
 {
     using System.Collections.Generic;
     using System.Data;
+    using System.Data.Common;
 
     public class MicronCommand
     {
@@ -14,5 +15,27 @@ namespace Micron
         public int CommandTimeoutSeconds { get; set; } = 5;
 
         public IList<MicronParameter> Parameters => this.parameters;
+
+        public void MapTo(DbCommand command)
+        {
+            command.CommandText = this.CommandText;
+            command.CommandType = this.CommandType;
+            command.CommandTimeout = this.CommandTimeoutSeconds;
+            for(var p = 0; p < this.parameters.Count; p++)
+            {
+                var mp = this.parameters[p];
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = mp.Name;
+                parameter.Value = mp.Value;
+                parameter.DbType =(DbType)mp.DataType;
+                parameter.Direction = mp.Direction;
+                parameter.IsNullable = mp.IsNullable;
+                parameter.Precision = mp.Precision;
+                parameter.Scale = mp.Scale;
+                parameter.Size = mp.Size;
+
+                _ = command.Parameters.Add(parameter);
+            }
+        }
     }
 }

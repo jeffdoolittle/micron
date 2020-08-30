@@ -26,7 +26,7 @@ namespace Micron.TestClient
             var downloadArchive = true;
             if (archiveFile.Exists)
             {
-                var expiry = TimeSpan.FromDays(1);
+                var expiry = TimeSpan.FromDays(30);
                 var age = DateTimeOffset.UtcNow - archiveFile.LastWriteTimeUtc;
                 if (age < expiry)
                 {

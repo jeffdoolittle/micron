@@ -1,12 +1,17 @@
 ﻿namespace Micron.TestClient
 {
     using System;
+    using System.Collections.Generic;
+    using System.Data.SQLite;
     using System.IO;
     using System.Linq;
     using System.Net.Http;
     using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
+    using Micron.Retry;
+    using Microsoft.Extensions.Logging.Abstractions;
 
     public class Program
     {
@@ -45,6 +50,37 @@
 
             downloaders.ToList().ForEach(d => d.Dispose());
 
+            var cst = new CancellationTokenSource();
+             var ct = cst.Token;
+
+            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=:memory:"));
+            var commandFactory = new MicronCommandFactory();
+            var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
+            var handlerFactory = new DbCommandHandlerFactory(retry, NullLogger<IDbCommandHandler>.Instance);
+            var commandHandler = handlerFactory.Build();
+
+            var micronCommand = commandFactory.CreateCommand("");
+
+            using var conn = connectionFactory.CreateConnection();
+            await conn.OpenAsync(ct);
+            var script = new SQLiteSchemaBuilder().CreateTables();
+
+            // this sucks
+            // should not have to go so low lever. handler factory should handle micron commands, not db commands
+
+            using var dbCommand = conn.CreateCommand();
+            dbCommand.CommandText = script;
+
+            _ = dbCommand.ExecuteNonQueryAsync(ct);
+
+            // micronCommand.MapTo(dbCommand);
+            // _ = await commandHandler.ExecuteAsync(dbCommand, ct);
+
+
+            Console.WriteLine("Executed ddl.");
+            return 2;
+
+
             var titlesFile = new FileInfo("title.basics.tsv");
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
@@ -79,7 +115,7 @@
                         TitleType = tsvRow.TitleType,
                         PrimaryTitle = tsvRow.PrimaryTitle,
                         OriginalTitle = tsvRow.OriginalTitle,
-                        IsAdult = tsvRow.IsAdult == "1",
+                        IsAdult = tsvRow.IsAdult == "1" ? 1 : 0,
                         StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
                             ? (int?)null
                             : Convert.ToInt32(tsvRow.StartYear),
@@ -147,7 +183,7 @@
 
     public class TitleTsvRow
     {
-        public string? TitleId { get; set; }
+        public string TitleId { get; set; } = "";
         public string? TitleType { get; set; }
         public string? PrimaryTitle { get; set; }
         public string? OriginalTitle { get; set; }
@@ -183,11 +219,11 @@
 
     public class TitleDbRow
     {
-        public string? TitleId { get; set; }
+        public string TitleId { get; set; } = "";
         public string? TitleType { get; set; }
         public string? PrimaryTitle { get; set; }
         public string? OriginalTitle { get; set; }
-        public bool IsAdult { get; set; }
+        public int IsAdult { get; set; } = 0;
         public int? StartYear { get; set; }
         public int? EndYear { get; set; }
         public int? RuntimeMinutes { get; set; }
@@ -198,5 +234,46 @@
                 this.TitleId, this.TitleType, this.PrimaryTitle,
                 this.OriginalTitle, this.IsAdult, this.StartYear,
                 this.EndYear, this.RuntimeMinutes, this.GenresCsv);
+    }
+
+    public class SQLiteSchemaBuilder
+    {
+        public string CreateTables()
+        {
+            var tables = new List<string>
+            {
+                this.CreateTitleBasicsTable()
+            };
+            return string.Join(Environment.NewLine, tables);
+        }
+
+        private string CreateTable(string tableName, IEnumerable<string> columns)
+        {
+            var sb = new StringBuilder();
+            _ = sb
+                .Append($"CREATE TABLE IF NOT EXISTS {tableName} (")
+                .Append(string.Join(",", columns))
+                .Append(") WITHOUT ROWID;");
+
+            return sb.ToString();
+        }
+
+        private string CreateTitleBasicsTable()
+        {
+            var columns = new List<string>
+            {
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.TitleId))} TEXT PRIMARY KEY",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.TitleType))} TEXT",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.PrimaryTitle))} TEXT",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.OriginalTitle))} TEXT",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.IsAdult))} INTEGER NOT NULL",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.StartYear))} INTEGER",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.EndYear))} INTEGER",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.RuntimeMinutes))} INTEGER",
+                $"{StringFns.ToSnakeCase(nameof(TitleDbRow.GenresCsv))} TEXT",
+            };
+
+            return this.CreateTable("title_basics", columns);
+        }
     }
 }
