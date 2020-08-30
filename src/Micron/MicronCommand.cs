@@ -8,6 +8,17 @@ namespace Micron
     {
         private readonly List<MicronParameter> parameters = new List<MicronParameter>();
 
+        public MicronCommand() : this("", CommandType.Text, 10)
+        {
+        }
+
+        public MicronCommand(string commandText, CommandType commandType, int commandTimeoutSeconds)
+        {
+            this.CommandText = commandText;
+            this.CommandType = commandType;
+            this.CommandTimeoutSeconds = commandTimeoutSeconds;
+
+        }
         public string CommandText { get; set; } = "";
 
         public CommandType CommandType { get; set; } = CommandType.Text;
@@ -21,13 +32,13 @@ namespace Micron
             command.CommandText = this.CommandText;
             command.CommandType = this.CommandType;
             command.CommandTimeout = this.CommandTimeoutSeconds;
-            for(var p = 0; p < this.parameters.Count; p++)
+            for (var p = 0; p < this.parameters.Count; p++)
             {
                 var mp = this.parameters[p];
                 var parameter = command.CreateParameter();
                 parameter.ParameterName = mp.Name;
                 parameter.Value = mp.Value;
-                parameter.DbType =(DbType)mp.DataType;
+                parameter.DbType = (DbType)mp.DataType;
                 parameter.Direction = mp.Direction;
                 parameter.IsNullable = mp.IsNullable;
                 parameter.Precision = mp.Precision;
