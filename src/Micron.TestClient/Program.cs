@@ -7,11 +7,13 @@
     using System.Linq;
     using System.Net.Http;
     using System.Text;
-    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
     using Micron.Retry;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
+    using Microsoft.Extensions.Logging.Console;
 
     public class Program
     {
@@ -19,13 +21,23 @@
         {
             using var scope = new ConsoleScope();
 
+            var serviceCollection = new ServiceCollection();
+            _ = serviceCollection.AddLogging(cfg =>
+                cfg.AddConsole(logger =>
+                    logger.Format = ConsoleLoggerFormat.Systemd));
+
+            var services = serviceCollection.BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateScopes = true,
+                ValidateOnBuild = true
+            });
+
             // if (args == null || args.Length == 0)
             // {
             //     Console.ForegroundColor = ConsoleColor.Red;
             //     Console.WriteLine("No arguments provided.");
             //     return 1;
             // }
-
 
             using var client = new HttpClient
             {
@@ -51,12 +63,14 @@
             downloaders.ToList().ForEach(d => d.Dispose());
 
             var cst = new CancellationTokenSource();
-             var ct = cst.Token;
+            var ct = cst.Token;
+
+            var logger = services.GetService<ILogger<IDbCommandHandler>>();
 
             var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=:memory:"));
             var commandFactory = new MicronCommandFactory();
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
-            var handlerFactory = new DbCommandHandlerFactory(retry, NullLogger<IDbCommandHandler>.Instance);
+            var handlerFactory = new DbCommandHandlerFactory(retry, logger);
             var commandHandler = handlerFactory.Build();
 
             var micronCommand = commandFactory.CreateCommand("");
