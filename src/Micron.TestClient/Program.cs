@@ -91,6 +91,8 @@
                             : Convert.ToInt32(tsvRow.RuntimeMinutes),
                         GenresCsv = tsvRow.GenresArray
                     };
+
+                    Console.WriteLine(dbRow);
                 }
                 catch (Exception ex)
                 {
