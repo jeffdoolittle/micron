@@ -80,8 +80,6 @@
             _ = await handler.ExecuteAsync(micronCommand, ct);
 
             Console.WriteLine("Executed ddl.");
-            return 2;
-
 
             var titlesFile = new FileInfo("title.basics.tsv");
             using var fs = titlesFile.OpenRead();
@@ -108,7 +106,6 @@
 
                 try
                 {
-
                     tsvRow = TitleTsvRow.FromLine(line);
 
                     dbRow = new TitleDbRow
@@ -130,7 +127,25 @@
                         GenresCsv = tsvRow.GenresArray
                     };
 
-                    Console.WriteLine(dbRow);
+                    var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8, @9)";
+                    var insert = commandFactory.CreateCommand(insertSql,
+                                                              dbRow.TitleId,
+                                                              dbRow.TitleType ?? "",
+                                                              dbRow.PrimaryTitle,
+                                                              dbRow.OriginalTitle,
+                                                              dbRow.IsAdult,
+                                                              dbRow.StartYear,
+                                                              dbRow.EndYear,
+                                                              dbRow.RuntimeMinutes,
+                                                              dbRow.GenresCsv);
+
+                    var insertHandler = commandHandlerFactory.Build();
+
+                    var affected = await insertHandler.ExecuteAsync(insert, ct);
+                    if (affected != 1)
+                    {
+                        throw new Exception($"Expected 1 row to be inserted but actual result was {affected}");
+                    }
                 }
                 catch (Exception ex)
                 {
