@@ -67,7 +67,7 @@
 
             var logger = services.GetService<ILogger<IDbCommandHandler>>();
 
-            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=:memory:"));
+            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=file:memdb1?mode=memory&cache=shared"));
             var commandFactory = new MicronCommandFactory();
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
             var dbCommandHandlerFactory = new DbCommandHandlerFactory(retry, logger);

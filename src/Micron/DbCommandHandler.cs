@@ -14,52 +14,32 @@
             Action<IDataRecord> callback,
             CommandBehavior behavior = CommandBehavior.Default)
         {
-            Unit exec(DbCommand cmd)
+            using var reader = command.ExecuteReader(behavior);
+
+            while (reader.Read())
             {
-                using var reader = cmd.ExecuteReader(behavior);
-
-                while (reader.Read())
-                {
-                    callback(reader);
-                }
-
-                reader.Close();
-
-                return Unit.Default;
+                callback(reader);
             }
 
-            _ = this.Try(command, exec);
+            reader.Close();
         }
 
         public T Scalar<T>(DbCommand command) where T : struct
         {
-            static T exec(DbCommand cmd)
-            {
-                var value = cmd.ExecuteScalar();
+            var value = command.ExecuteScalar();
 
-                return !DBNull.Value.Equals(value) ? (T)value : default;
-            }
-
-            return this.Try(command, exec);
+            return !DBNull.Value.Equals(value) ? (T)value : default;
         }
 
         public string String(DbCommand command)
         {
-            static string exec(DbCommand cmd)
-            {
-                var value = cmd.ExecuteScalar();
+            var value = command.ExecuteScalar();
 
-                return !DBNull.Value.Equals(value) ? (string)value : "";
-            }
-
-            return this.Try(command, exec);
+            return !DBNull.Value.Equals(value) ? (string)value : "";
         }
 
-        public int Execute(DbCommand command)
-        {
-            static int exec(DbCommand cmd) => cmd.ExecuteNonQuery();
-            return this.Try(command, exec);
-        }
+        public int Execute(DbCommand command) =>
+            command.ExecuteNonQuery();
 
         public void Transaction(DbCommand[] commands,
             Action<int, int>? resultIndexAndAffectedCallback = null)
@@ -74,95 +54,66 @@
                 throw new RootCauseException("All commands must share the same connection.");
             }
 
-            using var conn = commands[0].Connection;
+            var conn = commands[0].Connection;
 
-            try
+            var results = new Dictionary<int, int>();
+
+            using var tran = conn.BeginTransaction();
+
+            for (var i = 0; i < commands.Length; i++)
             {
-                var results = new Dictionary<int, int>();
-
-                conn.Open();
-                using var tran = conn.BeginTransaction();
-
-                for (var i = 0; i < commands.Length; i++)
-                {
-                    var cmd = commands[i];
-                    cmd.Transaction = tran;
-                    var affected = cmd.ExecuteNonQuery();
-                    results.Add(i, affected);
-                }
-
-                if (resultIndexAndAffectedCallback != null)
-                {
-                    foreach (var result in results)
-                    {
-                        resultIndexAndAffectedCallback(result.Key, result.Value);
-                    }
-                }
-
-                tran.Commit();
+                var cmd = commands[i];
+                cmd.Transaction = tran;
+                var affected = cmd.ExecuteNonQuery();
+                results.Add(i, affected);
             }
-            finally
+
+            if (resultIndexAndAffectedCallback != null)
             {
-                conn.Close();
+                foreach (var result in results)
+                {
+                    resultIndexAndAffectedCallback(result.Key, result.Value);
+                }
             }
+
+            tran.Commit();
         }
 
-        public async Task ReadAsync(DbCommand command, Func<IDataRecord, Task> callback,
+        public async Task ReadAsync(DbCommand command,
+            Func<IDataRecord, Task> callback,
             CommandBehavior behavior = CommandBehavior.Default,
             CancellationToken ct = default)
         {
-            async Task<Unit> exec(DbCommand cmd, CancellationToken ct)
+            await using var reader = await command.ExecuteReaderAsync(behavior, ct)
+                       .ConfigureAwait(false);
+
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
             {
-                using var reader = await cmd.ExecuteReaderAsync(behavior, ct)
-                    .ConfigureAwait(false);
-
-                while (await reader.ReadAsync(ct).ConfigureAwait(false))
-                {
-                    await callback(reader).ConfigureAwait(false);
-                }
-
-                await reader.CloseAsync().ConfigureAwait(false);
-
-                return Unit.Default;
+                await callback(reader).ConfigureAwait(false);
             }
 
-            _ = await this.TryAsync(command, ct, exec).ConfigureAwait(false);
+            await reader.CloseAsync().ConfigureAwait(false);
         }
 
         public async Task<T> ScalarAsync<T>(DbCommand command, CancellationToken ct = default)
             where T : struct
         {
-            static async Task<T> exec(DbCommand cmd, CancellationToken ct)
-            {
-                var value = await cmd.ExecuteScalarAsync(ct)
-                    .ConfigureAwait(false);
+            var value = await command.ExecuteScalarAsync(ct)
+                .ConfigureAwait(false);
 
-                return !DBNull.Value.Equals(value) ? (T)value : default;
-            }
-
-            return await this.TryAsync(command, ct, exec).ConfigureAwait(false);
+            return !DBNull.Value.Equals(value) ? (T)value : default;
         }
 
         public async Task<string> StringAsync(DbCommand command, CancellationToken ct = default)
         {
-            static async Task<string> exec(DbCommand cmd, CancellationToken ct)
-            {
-                var value = await cmd.ExecuteScalarAsync(ct)
-                    .ConfigureAwait(false);
+            var value = await command.ExecuteScalarAsync(ct)
+                .ConfigureAwait(false);
 
-                return !DBNull.Value.Equals(value) ? (string)value : "";
-            }
-
-            return await this.TryAsync(command, ct, exec).ConfigureAwait(false);
+            return !DBNull.Value.Equals(value) ? (string)value : "";
         }
 
-        public async Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default)
-        {
-            static Task<int> exec(DbCommand cmd, CancellationToken ct) =>
-                cmd.ExecuteNonQueryAsync(ct);
-
-            return await this.TryAsync(command, ct, exec).ConfigureAwait(false);
-        }
+        public async Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default) =>
+            await command.ExecuteNonQueryAsync(ct);
 
         public async Task TransactionAsync(DbCommand[] commands,
             CancellationToken ct = default,
@@ -182,75 +133,29 @@
 
             using var conn = commands[0].Connection;
 
-            try
+            var results = new Dictionary<int, int>();
+
+            using var tran = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
+
+            for (var i = 0; i < commands.Length; i++)
             {
-                var results = new Dictionary<int, int>();
+                var cmd = commands[i];
+                cmd.Transaction = tran;
+                var affected = await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                results.Add(i, affected);
+            }
 
-                conn.Open();
-                using var tran = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
-
-                for (var i = 0; i < commands.Length; i++)
+            if (resultIndexAndAffectedCallback != null)
+            {
+                foreach (var result in results)
                 {
-                    var cmd = commands[i];
-                    cmd.Transaction = tran;
-                    var affected = await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                    results.Add(i, affected);
+                    await resultIndexAndAffectedCallback(result.Key,
+                        result.Value).ConfigureAwait(false);
                 }
-
-                if (resultIndexAndAffectedCallback != null)
-                {
-                    foreach (var result in results)
-                    {
-                        await resultIndexAndAffectedCallback(result.Key,
-                            result.Value).ConfigureAwait(false);
-                    }
-                }
-
-                await tran.CommitAsync(ct).ConfigureAwait(false);
             }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-            }
-        }
 
-        private T Try<T>(DbCommand command, Func<DbCommand, T> exec)
-        {
-            using var cmd = command;
-            using var conn = command.Connection;
-
-            try
-            {
-                conn.Open();
-
-                return exec(cmd);
-            }
-            finally
-            {
-                conn.Close();
-            }
-        }
-
-        private async Task<T> TryAsync<T>(DbCommand command,
-            CancellationToken ct,
-            Func<DbCommand, CancellationToken, Task<T>> exec)
-        {
-            using var cmd = command;
-            using var conn = command.Connection;
-
-            try
-            {
-                ct.ThrowIfCancellationRequested();
-
-                await conn.OpenAsync(ct).ConfigureAwait(false);
-
-                return await exec(cmd, ct).ConfigureAwait(false);
-
-            }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-            }
+            await tran.CommitAsync(ct).ConfigureAwait(false);
         }
     }
 }
+
