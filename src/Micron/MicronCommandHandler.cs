@@ -117,7 +117,7 @@ namespace Micron
                 return dbCommand;
             });
 
-            this.dbCommandHandler.Batch(dbCommands.ToArray(), true, resultIndexAndAffectedCallback);
+            this.dbCommandHandler.Transaction(dbCommands.ToArray(), resultIndexAndAffectedCallback);
 
             foreach (var cmd in dbCommands)
             {
@@ -141,7 +141,7 @@ namespace Micron
                 return dbCommand;
             });
 
-            await this.dbCommandHandler.BatchAsync(dbCommands.ToArray(), true, resultIndexAndAffectedCallback, ct);
+            await this.dbCommandHandler.TransactionAsync(dbCommands.ToArray(), resultIndexAndAffectedCallback, ct);
 
             foreach (var cmd in dbCommands)
             {
@@ -169,7 +169,7 @@ namespace Micron
 
                 if (batch.Count == batchSize)
                 {
-                    this.dbCommandHandler.Batch(batch.ToArray(), false, (i, x) => batchAffected += x);
+                    this.dbCommandHandler.Transaction(batch.ToArray(), (i, x) => batchAffected += x);
                     batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected);
                     batch.ForEach(cmd => cmd.Dispose());
                     batch.Clear();
@@ -180,7 +180,7 @@ namespace Micron
 
             if (batch.Count > 0)
             {
-                this.dbCommandHandler.Batch(batch.ToArray(), false, (i, x) => batchAffected += x);
+                this.dbCommandHandler.Transaction(batch.ToArray(), (i, x) => batchAffected += x);
                 batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected);
                 batch.ForEach(cmd => cmd.Dispose());
                 batch.Clear();
@@ -208,7 +208,7 @@ namespace Micron
 
                 if (batch.Count == batchSize)
                 {
-                    await this.dbCommandHandler.BatchAsync(batch.ToArray(), false, (i, x) =>
+                    await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) =>
                     {
                         batchAffected += x;
                         return Task.CompletedTask;
@@ -223,7 +223,7 @@ namespace Micron
 
             if (batch.Count > 0)
             {
-                await this.dbCommandHandler.BatchAsync(batch.ToArray(), false, (i, x) =>
+                await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) =>
                     {
                         batchAffected += x;
                         return Task.CompletedTask;

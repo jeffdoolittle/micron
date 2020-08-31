@@ -85,7 +85,7 @@
 
             var logger = services.GetService<ILogger<IMicronCommandHandler>>();
 
-            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=file:memdb1?mode=memory&cache=shared"));
+            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=imdb.sqlite"));
             var commandFactory = new MicronCommandFactory();
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
             var commandHandlerFactory = new MicronCommandHandlerFactory(retry, logger, connectionFactory);
@@ -162,7 +162,7 @@
             });
 
             var insertHandler = commandHandlerFactory.Build();
-            insertHandler.Batch(commands, 1000);
+            insertHandler.Batch(commands, 100000);
 
             Console.WriteLine($"Lines: {lineCount}");
 

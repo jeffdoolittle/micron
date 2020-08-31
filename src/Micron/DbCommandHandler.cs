@@ -77,7 +77,7 @@
         public async Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default) =>
             await command.ExecuteNonQueryAsync(ct);
 
-        public void Batch(DbCommand[] commands, bool useTransaction,
+        public void Transaction(DbCommand[] commands,
             Action<int, int>? resultIndexAndAffectedCallback = null)
         {
             if (commands.Length == 0)
@@ -98,10 +98,7 @@
 
             try
             {
-                if (useTransaction)
-                {
-                    transaction = conn.BeginTransaction();
-                }
+                transaction = conn.BeginTransaction();
 
                 for (var i = 0; i < commands.Length; i++)
                 {
@@ -119,28 +116,19 @@
                     }
                 }
 
-                if (useTransaction && transaction != null)
-                {
-                    transaction.Commit();
-                }
+                transaction?.Commit();
             }
-            catch(Exception)
+            catch (Exception)
             {
-                if (transaction != null)
-                {
-                    transaction.Rollback();
-                }
+                transaction?.Rollback();
             }
             finally
             {
-                if (transaction != null)
-                {
-                    transaction.Dispose();
-                }
+                transaction?.Dispose();
             }
         }
 
-        public async Task BatchAsync(DbCommand[] commands, bool useTransaction,
+        public async Task TransactionAsync(DbCommand[] commands,
             Func<int, int, Task>? resultIndexAndAffectedCallback = null,
             CancellationToken ct = default)
         {
@@ -164,10 +152,7 @@
 
             try
             {
-                if (useTransaction)
-                {
-                    transaction = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
-                }
+                transaction = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
 
                 for (var i = 0; i < commands.Length; i++)
                 {
@@ -181,29 +166,19 @@
                 {
                     foreach (var result in results)
                     {
-                        await resultIndexAndAffectedCallback(result.Key,
-                            result.Value).ConfigureAwait(false);
+                        await resultIndexAndAffectedCallback(result.Key, result.Value).ConfigureAwait(false);
                     }
                 }
 
-                if (useTransaction && transaction != null)
-                {
-                    await transaction.CommitAsync(ct).ConfigureAwait(false);
-                }
+                await (transaction?.CommitAsync(ct) ?? Task.CompletedTask).ConfigureAwait(false);
             }
-            catch(Exception)
+            catch (Exception)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync(ct).ConfigureAwait(false);
-                }
+                await (transaction?.RollbackAsync(ct) ?? Task.CompletedTask).ConfigureAwait(false);
             }
             finally
             {
-                if (transaction != null)
-                {
-                    await transaction.DisposeAsync().ConfigureAwait(false);
-                }
+                await (transaction?.DisposeAsync() ?? default).ConfigureAwait(false);
             }
         }
     }
