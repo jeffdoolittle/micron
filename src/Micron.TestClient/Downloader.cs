@@ -18,7 +18,7 @@ namespace Micron.TestClient
             this.fileName = fileName;
         }
 
-        public async Task DownloadAsync()
+        public async Task DownloadAsync(int ifOlderThanDays)
         {
             var archiveFile = new FileInfo(this.fileName);
             var dataFile = new FileInfo(this.fileName.Replace(".gz", ""));
@@ -26,7 +26,7 @@ namespace Micron.TestClient
             var downloadArchive = true;
             if (archiveFile.Exists)
             {
-                var expiry = TimeSpan.FromDays(30);
+                var expiry = TimeSpan.FromDays(ifOlderThanDays);
                 var age = DateTimeOffset.UtcNow - archiveFile.LastWriteTimeUtc;
                 if (age < expiry)
                 {
@@ -45,7 +45,7 @@ namespace Micron.TestClient
             var extract = true;
             if (dataFile.Exists)
             {
-                var expiry = TimeSpan.FromDays(1);
+                var expiry = TimeSpan.FromDays(ifOlderThanDays);
                 var age = DateTimeOffset.UtcNow - dataFile.LastWriteTimeUtc;
                 if (age < expiry)
                 {
