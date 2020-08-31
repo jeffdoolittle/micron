@@ -27,16 +27,13 @@ namespace Micron
             var dbConnection = this.dbConnectionFactory.CreateConnection();
             var dbCommandHandler = this.dbCommandHandlerFactory.Build();
 
-
             var handler = new MicronCommandHandler(dbConnection, dbCommandHandler);
 
-            // var pipeline = new DbCommandHandlerPipelineDecorator(handler, this.commandConfigurer);
+            var retry = new MicronCommandHandlerRetryDecorator(handler, this.retryHandler, this.logger);
 
-            // var retry = new DbCommandHandlerRetryDecorator(pipeline, this.retryHandler, this.logger);
+            var logging = new MicronCommandHandlerLoggingDecorator(retry, this.logger);
 
-            // var logging = new DbCommandHandlerLoggingDecorator(retry, this.logger);
-
-            var exceptionHandling = new MicronCommandHandlerExceptionDecorator(handler, this.logger); // todo: introduce logger
+            var exceptionHandling = new MicronCommandHandlerExceptionDecorator(logging, this.logger);
 
             return exceptionHandling;
         }

@@ -131,11 +131,11 @@
                 throw new RootCauseException("All commands must share the same connection.");
             }
 
-            using var conn = commands[0].Connection;
+            var conn = commands[0].Connection;
 
             var results = new Dictionary<int, int>();
 
-            using var tran = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
+            await using var tran = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
 
             for (var i = 0; i < commands.Length; i++)
             {

@@ -9,18 +9,21 @@ namespace Micron
 
     public class MicronCommandHandler : IMicronCommandHandler
     {
-        private readonly DbConnection dbConnection;
+        private readonly IDbConnectionFactory dbConnectionFactory;
         private readonly IDbCommandHandler dbCommandHandler;
-        public MicronCommandHandler(DbConnection dbConnection, IDbCommandHandler dbCommandHandler)
+        public MicronCommandHandler(IDbConnectionFactory dbConnectionFactory, IDbCommandHandler dbCommandHandler)
         {
-            this.dbConnection = dbConnection;
+            this.dbConnectionFactory = dbConnectionFactory;
             this.dbCommandHandler = dbCommandHandler;
         }
 
         public int Execute(MicronCommand command)
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            using var conn = this.dbConnectionFactory.CreateConnection();
+            conn.Open();
+            using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
+
             return this.dbCommandHandler.Execute(dbCommand);
         }
 
