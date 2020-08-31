@@ -23,82 +23,111 @@ namespace Micron
             conn.Open();
             using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-
             return this.dbCommandHandler.Execute(dbCommand);
         }
 
-        public Task<int> ExecuteAsync(MicronCommand command, CancellationToken ct = default)
+        public async Task<int> ExecuteAsync(MicronCommand command, CancellationToken ct = default)
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            await using var conn = this.dbConnectionFactory.CreateConnection();
+            await conn.OpenAsync();
+            await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.ExecuteAsync(dbCommand, ct);
+            return await this.dbCommandHandler.ExecuteAsync(dbCommand, ct);
         }
 
         public void Read(MicronCommand command, Action<IDataRecord> callback, CommandBehavior behavior = CommandBehavior.Default)
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            using var conn = this.dbConnectionFactory.CreateConnection();
+            conn.Open();
+            using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
             this.dbCommandHandler.Read(dbCommand, callback, behavior);
         }
 
-        public Task ReadAsync(MicronCommand command, Func<IDataRecord, Task> callback, CommandBehavior behavior = CommandBehavior.Default, CancellationToken ct = default)
+        public async Task ReadAsync(MicronCommand command, Func<IDataRecord, Task> callback, CommandBehavior behavior = CommandBehavior.Default, CancellationToken ct = default)
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            await using var conn = this.dbConnectionFactory.CreateConnection();
+            await conn.OpenAsync();
+            await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.ReadAsync(dbCommand, callback, behavior, ct);
+            await this.dbCommandHandler.ReadAsync(dbCommand, callback, behavior, ct);
         }
 
         public T Scalar<T>(MicronCommand command) where T : struct
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            using var conn = this.dbConnectionFactory.CreateConnection();
+            conn.Open();
+            using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
             return this.dbCommandHandler.Scalar<T>(dbCommand);
         }
 
-        public Task<T> ScalarAsync<T>(MicronCommand command, CancellationToken ct = default)
+        public async Task<T> ScalarAsync<T>(MicronCommand command, CancellationToken ct = default)
             where T : struct
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            await using var conn = this.dbConnectionFactory.CreateConnection();
+            await conn.OpenAsync();
+            await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.ScalarAsync<T>(dbCommand, ct);
+            return await this.dbCommandHandler.ScalarAsync<T>(dbCommand, ct);
         }
 
         public string String(MicronCommand command)
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            using var conn = this.dbConnectionFactory.CreateConnection();
+            conn.Open();
+            using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
             return this.dbCommandHandler.String(dbCommand);
         }
 
-        public Task<string> StringAsync(MicronCommand command, CancellationToken ct = default)
+        public async Task<string> StringAsync(MicronCommand command, CancellationToken ct = default)
         {
-            var dbCommand = this.dbConnection.CreateCommand();
+            await using var conn = this.dbConnectionFactory.CreateConnection();
+            await conn.OpenAsync();
+            await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.StringAsync(dbCommand, ct);
+            return await this.dbCommandHandler.StringAsync(dbCommand, ct);
         }
 
         public void Transaction(MicronCommand[] commands, Action<int, int>? resultIndexAndAffectedCallback = null)
         {
+            using var conn = this.dbConnectionFactory.CreateConnection();
+            conn.Open();
+
             var dbCommands = commands.Select(x =>
             {
-                var dbCommand = this.dbConnection.CreateCommand();
+                var dbCommand = conn.CreateCommand();
                 x.MapTo(dbCommand);
                 return dbCommand;
             });
 
             this.dbCommandHandler.Transaction(dbCommands.ToArray(), resultIndexAndAffectedCallback);
+
+            foreach(var cmd in dbCommands)
+            {
+                cmd.Dispose();
+            }
         }
 
-        public Task TransactionAsync(MicronCommand[] commands, CancellationToken ct = default, Func<int, int, Task>? resultIndexAndAffectedCallback = null)
+        public async Task TransactionAsync(MicronCommand[] commands, CancellationToken ct = default, Func<int, int, Task>? resultIndexAndAffectedCallback = null)
         {
+            await using var conn = this.dbConnectionFactory.CreateConnection();
+            await conn.OpenAsync();
+
             var dbCommands = commands.Select(x =>
             {
-                var dbCommand = this.dbConnection.CreateCommand();
+                var dbCommand = conn.CreateCommand();
                 x.MapTo(dbCommand);
                 return dbCommand;
             });
 
-            return this.dbCommandHandler.TransactionAsync(dbCommands.ToArray(), ct, resultIndexAndAffectedCallback);
+            await this.dbCommandHandler.TransactionAsync(dbCommands.ToArray(), ct, resultIndexAndAffectedCallback);
+
+            foreach(var cmd in dbCommands)
+            {
+                await cmd.DisposeAsync();
+            }
         }
     }
 }
