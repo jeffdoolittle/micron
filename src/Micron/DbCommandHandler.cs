@@ -78,7 +78,6 @@
 
             tran.Commit();
         }
-
         public async Task ReadAsync(DbCommand command,
             Func<IDataRecord, Task> callback,
             CommandBehavior behavior = CommandBehavior.Default,

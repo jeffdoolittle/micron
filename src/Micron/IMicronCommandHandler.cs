@@ -1,6 +1,7 @@
 namespace Micron
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
@@ -19,19 +20,28 @@ namespace Micron
         void Transaction(MicronCommand[] commands,
             Action<int, int>? resultIndexAndAffectedCallback = null);
 
-        Task ReadAsync(MicronCommand command, Func<IDataRecord, Task> callback,
+        int Batch(IEnumerable<MicronCommand> commands, int batchSize);
+
+        Task ReadAsync(MicronCommand command,
+            Func<IDataRecord, Task> callback,
             CommandBehavior behavior = CommandBehavior.Default,
             CancellationToken ct = default);
 
-        Task<T> ScalarAsync<T>(MicronCommand command, CancellationToken ct = default)
+        Task<T> ScalarAsync<T>(MicronCommand command,
+            CancellationToken ct = default)
             where T : struct;
 
-        Task<string> StringAsync(MicronCommand command, CancellationToken ct = default);
+        Task<string> StringAsync(MicronCommand command,
+            CancellationToken ct = default);
 
-        Task<int> ExecuteAsync(MicronCommand command, CancellationToken ct = default);
+        Task<int> ExecuteAsync(MicronCommand command,
+            CancellationToken ct = default);
 
         Task TransactionAsync(MicronCommand[] commands,
             CancellationToken ct = default,
             Func<int, int, Task>? resultIndexAndAffectedCallback = null);
+
+        Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default);
     }
 }

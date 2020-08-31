@@ -126,7 +126,7 @@
                         GenresCsv = tsvRow.GenresArray
                     };
 
-                    var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8, @9)";
+                    var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
                     var insert = commandFactory.CreateCommand(insertSql,
                                                               dbRow.TitleId,
                                                               dbRow.TitleType ?? "",
