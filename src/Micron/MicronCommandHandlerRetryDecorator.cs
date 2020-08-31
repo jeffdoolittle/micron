@@ -23,28 +23,27 @@ namespace Micron
             this.logger = logger;
         }
 
-        public int Batch(IEnumerable<MicronCommand> commands, int batchSize) =>
+        public void Batch(IEnumerable<MicronCommand> commands, int batchSize,
+            Action<int, int>? batchIndexAndAffectedCallback = null) =>
             this.retryHandler.Execute(attempts => {
                 this.logger.LogDebug("Attempt {AttemptNumber}...", attempts + 1);
 
-                var affected = this.inner.Batch(commands, batchSize);
+                this.inner.Batch(commands, batchSize, batchIndexAndAffectedCallback);
 
                 this.logger.LogDebug("Attempt {AttemptNumber} successful!", attempts + 1);
-
-                return affected;
             });
 
-        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
-            CancellationToken ct = default) =>
+        public async Task BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default,
+            Func<int, int, Task>? batchIndexAndAffectedCallback = null) =>
             await this.retryHandler.ExecuteAsync(async attempts => {
                 this.logger.LogDebug("Attempt {AttemptNumber}...", attempts + 1);
 
-                var affected = await this.inner.BatchAsync(commands, batchSize)
+                await this.inner.BatchAsync(commands, batchSize, ct, batchIndexAndAffectedCallback)
                     .ConfigureAwait(false);
 
                 this.logger.LogDebug("Attempt {AttemptNumber} successful!", attempts + 1);
 
-                return affected;
             }).ConfigureAwait(false);
 
         public int Execute(MicronCommand command) =>

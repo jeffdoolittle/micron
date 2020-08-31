@@ -103,6 +103,7 @@
             using var rdr = new StreamReader(fs);
 
             var tsvRows = rdr.ReadLinesAsync().Where(line => line != null).Skip(1);
+            var handled = 0;
 
             var commands = tsvRows.Select(line =>
             {
@@ -146,6 +147,7 @@
                                                               dbRow.RuntimeMinutes,
                                                               dbRow.GenresCsv);
 
+                    handled++;
                     return insert;
                 }
                 catch (Exception)
@@ -161,6 +163,8 @@
 
             var insertHandler = commandHandlerFactory.Build();
             var affected = await insertHandler.BatchAsync(commands, 100, ct);
+
+            Console.WriteLine($"Handled: {handled}");
 
             return 0;
         }

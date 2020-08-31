@@ -19,26 +19,22 @@ namespace Micron
             this.logger = logger;
         }
 
-        public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
+        public void Batch(IEnumerable<MicronCommand> commands, int batchSize,
+            Action<int, int>? batchIndexAndAffectedCallback = null)
         {
-            int exec()
-            {
-                var affected = this.inner.Batch(commands, batchSize);
-                return affected;
-            }
+            void exec() => this.inner.Batch(commands, batchSize, batchIndexAndAffectedCallback);
 
-            return Try.To(exec, this.logger);
+            Try.To(exec, this.logger);
         }
 
-        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize, CancellationToken ct = default)
+        public async Task BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default,
+            Func<int, int, Task>? batchIndexAndAffectedCallback = null)
         {
-            async Task<int> exec()
-            {
-                var affected = await this.inner.BatchAsync(commands, batchSize).ConfigureAwait(false);
-                return affected;
-            }
+            async Task exec() => await this.inner.BatchAsync(commands, batchSize, ct, batchIndexAndAffectedCallback)
+                .ConfigureAwait(false);
 
-            return await Try.ToAsync(exec, this.logger).ConfigureAwait(false);
+            await Try.ToAsync(exec, this.logger).ConfigureAwait(false);
         }
 
         public int Execute(MicronCommand command)

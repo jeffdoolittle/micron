@@ -20,7 +20,8 @@ namespace Micron
         void Transaction(MicronCommand[] commands,
             Action<int, int>? resultIndexAndAffectedCallback = null);
 
-        int Batch(IEnumerable<MicronCommand> commands, int batchSize);
+        void Batch(IEnumerable<MicronCommand> commands, int batchSize,
+            Action<int, int>? batchIndexAndAffectedCallback = null);
 
         Task ReadAsync(MicronCommand command,
             Func<IDataRecord, Task> callback,
@@ -41,7 +42,8 @@ namespace Micron
             CancellationToken ct = default,
             Func<int, int, Task>? resultIndexAndAffectedCallback = null);
 
-        Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
-            CancellationToken ct = default);
+        Task BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default,
+            Func<int, int, Task>? batchIndexAndAffectedCallback = null);
     }
 }

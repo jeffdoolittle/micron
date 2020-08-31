@@ -147,10 +147,11 @@ namespace Micron
 
             await conn.CloseAsync();
         }
-        public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
+        public void Batch(IEnumerable<MicronCommand> commands, int batchSize,
+            Action<int, int>? batchIndexAndAffectedCallback = null)
         {
+            var batchIndex = 0;
             var processedCount = 0;
-            var affected = 0;
 
             do
             {
@@ -158,26 +159,32 @@ namespace Micron
 
                 var batch = commands.Skip(processedCount).Take(batchSize).ToArray();
 
+                if (batch.Length == 0)
+                {
+                    break;
+                }
+
                 this.Transaction(batch, (i, x) => batchAffected += x);
+
+                batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected);
+
+                processedCount += batch.Length;
+                batchIndex++;
 
                 if (batch.Length < batchSize)
                 {
                     break;
                 }
 
-                processedCount += batch.Length;
-                affected += batchAffected;
-
             } while (true);
-
-            return affected;
         }
 
-        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
-            CancellationToken ct = default)
+        public async Task BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default,
+            Func<int, int, Task>? batchIndexAndAffectedCallback = null)
         {
+            var batchIndex = 0;
             var processedCount = 0;
-            var affected = 0;
 
             do
             {
@@ -185,23 +192,32 @@ namespace Micron
 
                 var batch = await commands.Skip(processedCount).Take(batchSize).ToArrayAsync();
 
+                if (batch.Length == 0)
+                {
+                    break;
+                }
+
                 await this.TransactionAsync(batch, ct, (i, x) =>
                     {
                         batchAffected += x;
                         return Task.CompletedTask;
                     });
 
+
+                if (batchIndexAndAffectedCallback != null)
+                {
+                    await batchIndexAndAffectedCallback.Invoke(batchIndex, batchAffected);
+                }
+
+                processedCount += batch.Length;
+                batchIndex++;
+
                 if (batch.Length < batchSize)
                 {
                     break;
                 }
 
-                processedCount += batch.Length;
-                affected += batchAffected;
-
             } while (true);
-
-            return affected;
         }
     }
 }

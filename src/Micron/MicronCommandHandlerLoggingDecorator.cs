@@ -19,30 +19,39 @@ namespace Micron
             this.logger = logger;
         }
 
-        public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
+        public void Batch(IEnumerable<MicronCommand> commands, int batchSize,
+            Action<int, int>? batchIndexAndAffectedCallback = null)
         {
             this.logger.LogDebug("Executing batch.");
 
-            var affected = this.inner.Batch(commands, batchSize);
 
-            this.logger.LogInformation("Executed batch affecting {Affected} rows.",
-                affected);
+            void callback(int batchIndex, int affectedCount)
+            {
+                this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows.",
+                    batchIndex, affectedCount);
 
-            return affected;
+                batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount);
+            }
+
+            this.inner.Batch(commands, batchSize, callback);
         }
 
-        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
-            CancellationToken ct = default)
+        public async Task BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default,
+            Func<int, int, Task>? batchIndexAndAffectedCallback = null)
         {
             this.logger.LogDebug("Executing batch.");
 
-            var affected = await this.inner.BatchAsync(commands, batchSize)
+            Task callback(int batchIndex, int affectedCount)
+            {
+                this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows.",
+                    batchIndex, affectedCount);
+
+                return batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount) ?? Task.CompletedTask;
+            }
+
+            await this.inner.BatchAsync(commands, batchSize, ct, callback)
                 .ConfigureAwait(false);
-
-            this.logger.LogInformation("Executed batch affecting {Affected} rows.",
-                affected);
-
-            return affected;
         }
 
         public int Execute(MicronCommand command)
