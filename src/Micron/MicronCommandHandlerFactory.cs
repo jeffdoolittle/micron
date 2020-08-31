@@ -8,26 +8,22 @@ namespace Micron
         private readonly IRetryHandler retryHandler;
         private readonly ILogger<IMicronCommandHandler> logger;
         private readonly IDbConnectionFactory dbConnectionFactory;
-        private readonly IDbCommandHandlerFactory dbCommandHandlerFactory;
 
         public MicronCommandHandlerFactory(
             IRetryHandler retryHandler,
             ILogger<IMicronCommandHandler> logger,
-            IDbConnectionFactory dbConnectionFactory,
-            IDbCommandHandlerFactory dbCommandHandlerFactory)
+            IDbConnectionFactory dbConnectionFactory)
         {
             this.retryHandler = retryHandler;
             this.logger = logger;
             this.dbConnectionFactory = dbConnectionFactory;
-            this.dbCommandHandlerFactory = dbCommandHandlerFactory;
         }
 
         public IMicronCommandHandler Build()
         {
-            var dbConnection = this.dbConnectionFactory.CreateConnection();
-            var dbCommandHandler = this.dbCommandHandlerFactory.Build();
+            var dbCommandHandler = new DbCommandHandler();
 
-            var handler = new MicronCommandHandler(dbConnection, dbCommandHandler);
+            var handler = new MicronCommandHandler(this.dbConnectionFactory, dbCommandHandler);
 
             var retry = new MicronCommandHandlerRetryDecorator(handler, this.retryHandler, this.logger);
 
