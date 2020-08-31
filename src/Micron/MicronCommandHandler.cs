@@ -3,6 +3,7 @@ namespace Micron
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Data.Common;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -116,7 +117,7 @@ namespace Micron
                 return dbCommand;
             });
 
-            this.dbCommandHandler.Transaction(dbCommands.ToArray(), resultIndexAndAffectedCallback);
+            this.dbCommandHandler.Batch(dbCommands.ToArray(), true, resultIndexAndAffectedCallback);
 
             foreach (var cmd in dbCommands)
             {
@@ -126,7 +127,9 @@ namespace Micron
             conn.Close();
         }
 
-        public async Task TransactionAsync(MicronCommand[] commands, CancellationToken ct = default, Func<int, int, Task>? resultIndexAndAffectedCallback = null)
+        public async Task TransactionAsync(MicronCommand[] commands,
+            CancellationToken ct = default,
+            Func<int, int, Task>? resultIndexAndAffectedCallback = null)
         {
             await using var conn = this.dbConnectionFactory.CreateConnection();
             await conn.OpenAsync(ct);
@@ -138,7 +141,7 @@ namespace Micron
                 return dbCommand;
             });
 
-            await this.dbCommandHandler.TransactionAsync(dbCommands.ToArray(), ct, resultIndexAndAffectedCallback);
+            await this.dbCommandHandler.BatchAsync(dbCommands.ToArray(), true, resultIndexAndAffectedCallback, ct);
 
             foreach (var cmd in dbCommands)
             {
@@ -147,77 +150,90 @@ namespace Micron
 
             await conn.CloseAsync();
         }
+
         public void Batch(IEnumerable<MicronCommand> commands, int batchSize,
             Action<int, int>? batchIndexAndAffectedCallback = null)
         {
+            using var conn = this.dbConnectionFactory.CreateConnection();
+            conn.Open();
+
             var batchIndex = 0;
-            var processedCount = 0;
 
-            do
+            var batch = new List<DbCommand>();
+            var batchAffected = 0;
+            foreach (var cmd in commands)
             {
-                var batchAffected = 0;
+                var dbCommand = conn.CreateCommand();
+                cmd.MapTo(dbCommand);
+                batch.Add(dbCommand);
 
-                var batch = commands.Skip(processedCount).Take(batchSize).ToArray();
-
-                if (batch.Length == 0)
+                if (batch.Count == batchSize)
                 {
-                    break;
+                    this.dbCommandHandler.Batch(batch.ToArray(), false, (i, x) => batchAffected += x);
+                    batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected);
+                    batch.ForEach(cmd => cmd.Dispose());
+                    batch.Clear();
+                    batchAffected = 0;
+                    batchIndex++;
                 }
+            }
 
-                this.Transaction(batch, (i, x) => batchAffected += x);
-
+            if (batch.Count > 0)
+            {
+                this.dbCommandHandler.Batch(batch.ToArray(), false, (i, x) => batchAffected += x);
                 batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected);
+                batch.ForEach(cmd => cmd.Dispose());
+                batch.Clear();
+            }
 
-                processedCount += batch.Length;
-                batchIndex++;
-
-                if (batch.Length < batchSize)
-                {
-                    break;
-                }
-
-            } while (true);
+            conn.Close();
         }
 
         public async Task BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
             CancellationToken ct = default,
             Func<int, int, Task>? batchIndexAndAffectedCallback = null)
         {
+            await using var conn = this.dbConnectionFactory.CreateConnection();
+            await conn.OpenAsync(ct);
+
             var batchIndex = 0;
-            var processedCount = 0;
 
-            do
+            var batch = new List<DbCommand>();
+            var batchAffected = 0;
+            await foreach (var cmd in commands)
             {
-                var batchAffected = 0;
+                var dbCommand = conn.CreateCommand();
+                cmd.MapTo(dbCommand);
+                batch.Add(dbCommand);
 
-                var batch = await commands.Skip(processedCount).Take(batchSize).ToArrayAsync();
-
-                if (batch.Length == 0)
+                if (batch.Count == batchSize)
                 {
-                    break;
-                }
-
-                await this.TransactionAsync(batch, ct, (i, x) =>
+                    await this.dbCommandHandler.BatchAsync(batch.ToArray(), false, (i, x) =>
                     {
                         batchAffected += x;
                         return Task.CompletedTask;
                     });
-
-
-                if (batchIndexAndAffectedCallback != null)
-                {
-                    await batchIndexAndAffectedCallback.Invoke(batchIndex, batchAffected);
+                    await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
+                    batch.ForEach(async cmd => await cmd.DisposeAsync());
+                    batch.Clear();
+                    batchAffected = 0;
+                    batchIndex++;
                 }
+            }
 
-                processedCount += batch.Length;
-                batchIndex++;
+            if (batch.Count > 0)
+            {
+                await this.dbCommandHandler.BatchAsync(batch.ToArray(), false, (i, x) =>
+                    {
+                        batchAffected += x;
+                        return Task.CompletedTask;
+                    });
+                await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
+                batch.ForEach(async cmd => await cmd.DisposeAsync());
+                batch.Clear();
+            }
 
-                if (batch.Length < batchSize)
-                {
-                    break;
-                }
-
-            } while (true);
+            await conn.CloseAsync();
         }
     }
 }

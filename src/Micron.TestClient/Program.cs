@@ -102,8 +102,8 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var tsvRows = rdr.ReadLinesAsync().Where(line => line != null).Skip(1);
-            var handled = 0;
+            var tsvRows = rdr.ReadLines().Where(line => line != null).Skip(1);
+            var lineCount = 0;
 
             var commands = tsvRows.Select(line =>
             {
@@ -147,7 +147,7 @@
                                                               dbRow.RuntimeMinutes,
                                                               dbRow.GenresCsv);
 
-                    handled++;
+                    lineCount++;
                     return insert;
                 }
                 catch (Exception)
@@ -162,9 +162,9 @@
             });
 
             var insertHandler = commandHandlerFactory.Build();
-            var affected = await insertHandler.BatchAsync(commands, 100, ct);
+            insertHandler.Batch(commands, 10000);
 
-            Console.WriteLine($"Handled: {handled}");
+            Console.WriteLine($"Lines: {lineCount}");
 
             return 0;
         }

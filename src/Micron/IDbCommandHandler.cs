@@ -17,7 +17,8 @@
 
         int Execute(DbCommand command);
 
-        void Transaction(DbCommand[] commands,
+        void Batch(DbCommand[] commands,
+            bool useTransaction,
             Action<int, int>? resultIndexAndAffectedCallback = null);
 
         Task ReadAsync(DbCommand command, Func<IDataRecord, Task> callback,
@@ -31,8 +32,9 @@
 
         Task<int> ExecuteAsync(DbCommand command, CancellationToken ct = default);
 
-        Task TransactionAsync(DbCommand[] commands,
-            CancellationToken ct = default,
-            Func<int, int, Task>? resultIndexAndAffectedCallback = null);
+        Task BatchAsync(DbCommand[] commands,
+            bool useTransaction,
+            Func<int, int, Task>? resultIndexAndAffectedCallback = null,
+            CancellationToken ct = default);
     }
 }
