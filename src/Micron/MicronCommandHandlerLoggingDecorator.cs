@@ -1,6 +1,7 @@
 namespace Micron
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
@@ -16,6 +17,32 @@ namespace Micron
         {
             this.inner = inner;
             this.logger = logger;
+        }
+
+        public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
+        {
+            this.logger.LogDebug("Executing batch.");
+
+            var affected = this.inner.Batch(commands, batchSize);
+
+            this.logger.LogInformation("Executed batch affecting {Affected} rows.",
+                affected);
+
+            return affected;
+        }
+
+        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default)
+        {
+            this.logger.LogDebug("Executing batch.");
+
+            var affected = await this.inner.BatchAsync(commands, batchSize)
+                .ConfigureAwait(false);
+
+            this.logger.LogInformation("Executed batch affecting {Affected} rows.",
+                affected);
+
+            return affected;
         }
 
         public int Execute(MicronCommand command)
@@ -34,7 +61,8 @@ namespace Micron
         {
             this.logger.LogDebug("Executing command {CommandText}.", command.CommandText);
 
-            var affected = await this.inner.ExecuteAsync(command, ct);
+            var affected = await this.inner.ExecuteAsync(command, ct)
+                .ConfigureAwait(false);
 
             this.logger.LogInformation("Executed command {CommandText} affecting {Affected} rows.",
                 command.CommandText, affected);
@@ -84,7 +112,8 @@ namespace Micron
             this.logger.LogDebug("Retrieving scalar from command {CommandText}.",
                                command.CommandText);
 
-            var scalar = await this.inner.ScalarAsync<T>(command, ct);
+            var scalar = await this.inner.ScalarAsync<T>(command, ct)
+                .ConfigureAwait(false);
 
             this.logger.LogInformation("Retrieved scalar from command {CommandText}.",
                 command.CommandText);
@@ -110,7 +139,8 @@ namespace Micron
             this.logger.LogDebug("Retrieving string from command {CommandText}.",
                                command.CommandText);
 
-            var scalar = await this.inner.StringAsync(command, ct);
+            var scalar = await this.inner.StringAsync(command, ct)
+                .ConfigureAwait(false);
 
             this.logger.LogInformation("Retrieved string from command {CommandText}.",
                 command.CommandText);
@@ -125,7 +155,8 @@ namespace Micron
             this.inner.Transaction(commands, resultIndexAndAffectedCallback);
 
             this.logger.LogInformation("Performed transaction for {CommandCount} commands.",
-                commands.Length);        }
+                commands.Length);
+        }
 
         public async Task TransactionAsync(MicronCommand[] commands, CancellationToken ct = default, Func<int, int, Task>? resultIndexAndAffectedCallback = null)
         {

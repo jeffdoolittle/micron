@@ -132,16 +132,6 @@ namespace Micron
         }
         public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
         {
-            using var conn = this.dbConnectionFactory.CreateConnection();
-            conn.Open();
-
-            var dbCommands = commands.Select(x =>
-            {
-                var dbCommand = conn.CreateCommand();
-                x.MapTo(dbCommand);
-                return dbCommand;
-            });
-
             var processedCount = 0;
             var affected = 0;
 
@@ -169,16 +159,6 @@ namespace Micron
         public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
             CancellationToken ct = default)
         {
-            using var conn = this.dbConnectionFactory.CreateConnection();
-            await conn.OpenAsync(ct);
-
-            var dbCommands = commands.Select(x =>
-            {
-                var dbCommand = conn.CreateCommand();
-                x.MapTo(dbCommand);
-                return dbCommand;
-            });
-
             var processedCount = 0;
             var affected = 0;
 

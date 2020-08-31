@@ -19,7 +19,7 @@
             this.defaultParameterPrefix = defaultParameterPrefix;
 
         public MicronCommand CreateCommand(string commandText,
-            params object[] parameters) =>
+            params object?[] parameters) =>
                 this.CreateCommand(commandText, _ =>
                     {
                         for (var p = 0; p < parameters.Length; p++)

@@ -1,6 +1,7 @@
 namespace Micron
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
@@ -21,6 +22,30 @@ namespace Micron
             this.retryHandler = retryHandler;
             this.logger = logger;
         }
+
+        public int Batch(IEnumerable<MicronCommand> commands, int batchSize) =>
+            this.retryHandler.Execute(attempts => {
+                this.logger.LogDebug("Attempt {AttemptNumber}...", attempts + 1);
+
+                var affected = this.inner.Batch(commands, batchSize);
+
+                this.logger.LogDebug("Attempt {AttemptNumber} successful!", attempts + 1);
+
+                return affected;
+            });
+
+        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+            CancellationToken ct = default) =>
+            await this.retryHandler.ExecuteAsync(async attempts => {
+                this.logger.LogDebug("Attempt {AttemptNumber}...", attempts + 1);
+
+                var affected = await this.inner.BatchAsync(commands, batchSize)
+                    .ConfigureAwait(false);
+
+                this.logger.LogDebug("Attempt {AttemptNumber} successful!", attempts + 1);
+
+                return affected;
+            }).ConfigureAwait(false);
 
         public int Execute(MicronCommand command) =>
             this.retryHandler.Execute(attempts =>

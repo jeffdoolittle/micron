@@ -27,7 +27,7 @@ namespace Micron
 
     public interface IMicronCommandFactoryParameterExpression
     {
-        IMicronCommandFactoryParameterExpression InParameter(string name, object value,
+        IMicronCommandFactoryParameterExpression InParameter(string name, object? value,
             Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null);
         IMicronCommandFactoryParameterExpression InParameter<T>(string name, T value,
             Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null);

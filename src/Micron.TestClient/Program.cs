@@ -15,6 +15,19 @@
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.Extensions.Logging.Console;
 
+    public static class TextReaderExtensions
+    {
+        public static async IAsyncEnumerable<string?> ReadLinesAsync(this TextReader reader)
+        {
+            yield return await reader.ReadLineAsync();
+        }
+
+        public static IEnumerable<string?> ReadLines(this TextReader reader)
+        {
+            yield return reader.ReadLine();
+        }
+    }
+
     public class Program
     {
         public static async Task<int> Main(string[] args)
@@ -84,82 +97,51 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var firstLine = false;
-
-            do
+            var commands = rdr.ReadLines().Where(line => line != null).Select(line =>
             {
-                var line = await rdr.ReadLineAsync();
                 if (line == null)
                 {
-                    break;
+                    throw new ArgumentException("line cannot be null");
                 }
 
-                if (!firstLine)
+                var tsvRow = TitleTsvRow.FromLine(line);
+
+                var dbRow = new TitleDbRow
                 {
-                    firstLine = true;
-                    continue;
-                }
+                    TitleId = tsvRow.TitleId,
+                    TitleType = tsvRow.TitleType,
+                    PrimaryTitle = tsvRow.PrimaryTitle,
+                    OriginalTitle = tsvRow.OriginalTitle,
+                    IsAdult = tsvRow.IsAdult == "1" ? 1 : 0,
+                    StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
+                        ? (int?)null
+                        : Convert.ToInt32(tsvRow.StartYear),
+                    EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
+                        ? (int?)null
+                        : Convert.ToInt32(tsvRow.EndYear),
+                    RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
+                        ? (int?)null
+                        : Convert.ToInt32(tsvRow.RuntimeMinutes),
+                    GenresCsv = tsvRow.GenresArray
+                };
 
-                TitleTsvRow? tsvRow = null;
-                TitleDbRow? dbRow = null;
+                var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
+                var insert = commandFactory.CreateCommand(insertSql,
+                                                          dbRow.TitleId,
+                                                          dbRow.TitleType ?? "",
+                                                          dbRow.PrimaryTitle,
+                                                          dbRow.OriginalTitle,
+                                                          dbRow.IsAdult,
+                                                          dbRow.StartYear,
+                                                          dbRow.EndYear,
+                                                          dbRow.RuntimeMinutes,
+                                                          dbRow.GenresCsv);
 
-                try
-                {
-                    tsvRow = TitleTsvRow.FromLine(line);
+                return insert;
+            });
 
-                    dbRow = new TitleDbRow
-                    {
-                        TitleId = tsvRow.TitleId,
-                        TitleType = tsvRow.TitleType,
-                        PrimaryTitle = tsvRow.PrimaryTitle,
-                        OriginalTitle = tsvRow.OriginalTitle,
-                        IsAdult = tsvRow.IsAdult == "1" ? 1 : 0,
-                        StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
-                            ? (int?)null
-                            : Convert.ToInt32(tsvRow.StartYear),
-                        EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
-                            ? (int?)null
-                            : Convert.ToInt32(tsvRow.EndYear),
-                        RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
-                            ? (int?)null
-                            : Convert.ToInt32(tsvRow.RuntimeMinutes),
-                        GenresCsv = tsvRow.GenresArray
-                    };
-
-                    var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
-                    var insert = commandFactory.CreateCommand(insertSql,
-                                                              dbRow.TitleId,
-                                                              dbRow.TitleType ?? "",
-                                                              dbRow.PrimaryTitle,
-                                                              dbRow.OriginalTitle,
-                                                              dbRow.IsAdult,
-                                                              dbRow.StartYear,
-                                                              dbRow.EndYear,
-                                                              dbRow.RuntimeMinutes,
-                                                              dbRow.GenresCsv);
-
-                    var insertHandler = commandHandlerFactory.Build();
-
-                    var affected = await insertHandler.ExecuteAsync(insert, ct);
-                    if (affected != 1)
-                    {
-                        throw new Exception($"Expected 1 row to be inserted but actual result was {affected}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine(tsvRow);
-                    Console.WriteLine(dbRow);
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ex);
-                    Console.ResetColor();
-
-                    return 1;
-                }
-
-            }
-            while (true);
+            var insertHandler = commandHandlerFactory.Build();
+            var affected = await insertHandler.BatchAsync(commands, 100, ct);
 
             return 0;
         }

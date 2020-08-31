@@ -1,6 +1,7 @@
 namespace Micron
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
@@ -16,6 +17,28 @@ namespace Micron
         {
             this.inner = inner;
             this.logger = logger;
+        }
+
+        public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
+        {
+            int exec()
+            {
+                var affected = this.inner.Batch(commands, batchSize);
+                return affected;
+            }
+
+            return Try.To(exec, this.logger);
+        }
+
+        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize, CancellationToken ct = default)
+        {
+            async Task<int> exec()
+            {
+                var affected = await this.inner.BatchAsync(commands, batchSize).ConfigureAwait(false);
+                return affected;
+            }
+
+            return await Try.ToAsync(exec, this.logger).ConfigureAwait(false);
         }
 
         public int Execute(MicronCommand command)

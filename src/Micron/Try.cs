@@ -1,6 +1,7 @@
 namespace Micron
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
@@ -26,15 +27,17 @@ namespace Micron
             }
         }
 
-        public static async Task ToAsync(Func<Task> function, ILogger logger) =>
+        public static async Task ToAsync(Func<Task> function, ILogger logger, CancellationToken ct = default) =>
             _ = await ToAsync(async () =>
                 {
                     await function().ConfigureAwait(false);
                     return Unit.Default;
-                }, logger).ConfigureAwait(false);
+                }, logger, ct).ConfigureAwait(false);
 
-        public static async Task<T> ToAsync<T>(Func<Task<T>> function, ILogger logger)
+        public static async Task<T> ToAsync<T>(Func<Task<T>> function, ILogger logger, CancellationToken ct = default)
         {
+            ct.ThrowIfCancellationRequested();
+
             try
             {
                 return await function().ConfigureAwait(false);
