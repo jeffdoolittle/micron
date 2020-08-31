@@ -3,7 +3,6 @@ namespace Micron
     using System;
     using System.Collections.Generic;
     using System.Data;
-    using System.Data.Common;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -24,7 +23,9 @@ namespace Micron
             conn.Open();
             using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.Execute(dbCommand);
+            var affected = this.dbCommandHandler.Execute(dbCommand);
+            conn.Close();
+            return affected;
         }
 
         public async Task<int> ExecuteAsync(MicronCommand command, CancellationToken ct = default)
@@ -33,7 +34,9 @@ namespace Micron
             await conn.OpenAsync(ct);
             await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return await this.dbCommandHandler.ExecuteAsync(dbCommand, ct);
+            var affected = await this.dbCommandHandler.ExecuteAsync(dbCommand, ct);
+            await conn.CloseAsync();
+            return affected;
         }
 
         public void Read(MicronCommand command, Action<IDataRecord> callback, CommandBehavior behavior = CommandBehavior.Default)
@@ -43,6 +46,7 @@ namespace Micron
             using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
             this.dbCommandHandler.Read(dbCommand, callback, behavior);
+            conn.Close();
         }
 
         public async Task ReadAsync(MicronCommand command, Func<IDataRecord, Task> callback, CommandBehavior behavior = CommandBehavior.Default, CancellationToken ct = default)
@@ -52,6 +56,7 @@ namespace Micron
             await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
             await this.dbCommandHandler.ReadAsync(dbCommand, callback, behavior, ct);
+            await conn.CloseAsync();
         }
 
         public T Scalar<T>(MicronCommand command) where T : struct
@@ -60,7 +65,9 @@ namespace Micron
             conn.Open();
             using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.Scalar<T>(dbCommand);
+            var value = this.dbCommandHandler.Scalar<T>(dbCommand);
+            conn.Close();
+            return value;
         }
 
         public async Task<T> ScalarAsync<T>(MicronCommand command, CancellationToken ct = default)
@@ -70,7 +77,9 @@ namespace Micron
             await conn.OpenAsync(ct);
             await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return await this.dbCommandHandler.ScalarAsync<T>(dbCommand, ct);
+            var value = await this.dbCommandHandler.ScalarAsync<T>(dbCommand, ct);
+            await conn.CloseAsync();
+            return value;
         }
 
         public string String(MicronCommand command)
@@ -79,7 +88,9 @@ namespace Micron
             conn.Open();
             using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return this.dbCommandHandler.String(dbCommand);
+            var value = this.dbCommandHandler.String(dbCommand);
+            conn.Close();
+            return value;
         }
 
         public async Task<string> StringAsync(MicronCommand command, CancellationToken ct = default)
@@ -88,7 +99,9 @@ namespace Micron
             await conn.OpenAsync(ct);
             await using var dbCommand = conn.CreateCommand();
             command.MapTo(dbCommand);
-            return await this.dbCommandHandler.StringAsync(dbCommand, ct);
+            var value = await this.dbCommandHandler.StringAsync(dbCommand, ct);
+            await conn.CloseAsync();
+            return value;
         }
 
         public void Transaction(MicronCommand[] commands, Action<int, int>? resultIndexAndAffectedCallback = null)
@@ -109,6 +122,8 @@ namespace Micron
             {
                 cmd.Dispose();
             }
+
+            conn.Close();
         }
 
         public async Task TransactionAsync(MicronCommand[] commands, CancellationToken ct = default, Func<int, int, Task>? resultIndexAndAffectedCallback = null)
@@ -129,6 +144,8 @@ namespace Micron
             {
                 await cmd.DisposeAsync();
             }
+
+            await conn.CloseAsync();
         }
         public int Batch(IEnumerable<MicronCommand> commands, int batchSize)
         {
@@ -156,7 +173,7 @@ namespace Micron
             return affected;
         }
 
-        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
             CancellationToken ct = default)
         {
             var processedCount = 0;
@@ -166,7 +183,7 @@ namespace Micron
             {
                 var batchAffected = 0;
 
-                var batch = commands.Skip(processedCount).Take(batchSize).ToArray();
+                var batch = await commands.Skip(processedCount).Take(batchSize).ToArrayAsync();
 
                 await this.TransactionAsync(batch, ct, (i, x) =>
                     {

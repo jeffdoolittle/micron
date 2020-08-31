@@ -31,7 +31,7 @@ namespace Micron
             return affected;
         }
 
-        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
             CancellationToken ct = default)
         {
             this.logger.LogDebug("Executing batch.");

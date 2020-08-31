@@ -102,7 +102,7 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var tsvRows = rdr.ReadLines().Where(line => line != null).Skip(1);
+            var tsvRows = rdr.ReadLinesAsync().Where(line => line != null).Skip(1);
 
             var commands = tsvRows.Select(line =>
             {

@@ -30,7 +30,7 @@ namespace Micron
             return Try.To(exec, this.logger);
         }
 
-        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize, CancellationToken ct = default)
+        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize, CancellationToken ct = default)
         {
             async Task<int> exec()
             {

@@ -34,7 +34,7 @@ namespace Micron
                 return affected;
             });
 
-        public async Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+        public async Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
             CancellationToken ct = default) =>
             await this.retryHandler.ExecuteAsync(async attempts => {
                 this.logger.LogDebug("Attempt {AttemptNumber}...", attempts + 1);

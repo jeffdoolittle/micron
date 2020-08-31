@@ -41,7 +41,7 @@ namespace Micron
             CancellationToken ct = default,
             Func<int, int, Task>? resultIndexAndAffectedCallback = null);
 
-        Task<int> BatchAsync(IEnumerable<MicronCommand> commands, int batchSize,
+        Task<int> BatchAsync(IAsyncEnumerable<MicronCommand> commands, int batchSize,
             CancellationToken ct = default);
     }
 }
