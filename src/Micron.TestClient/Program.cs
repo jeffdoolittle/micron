@@ -12,19 +12,24 @@
     using Micron.Retry;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.Extensions.Logging.Console;
 
     public static class TextReaderExtensions
     {
-        public static async IAsyncEnumerable<string?> ReadLinesAsync(this TextReader reader)
+        public static async IAsyncEnumerable<string?> ReadLinesAsync(this StreamReader reader)
         {
-            yield return await reader.ReadLineAsync();
+            while(!reader.EndOfStream)
+            {
+                yield return await reader.ReadLineAsync();
+            }
         }
 
-        public static IEnumerable<string?> ReadLines(this TextReader reader)
+        public static IEnumerable<string?> ReadLines(this StreamReader reader)
         {
-            yield return reader.ReadLine();
+            while(!reader.EndOfStream)
+            {
+                yield return reader.ReadLine();
+            }
         }
     }
 
@@ -97,7 +102,9 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var commands = rdr.ReadLines().Where(line => line != null).Select(line =>
+            var tsvRows = rdr.ReadLines().Where(line => line != null).Skip(1);
+
+            var commands = tsvRows.Select(line =>
             {
                 if (line == null)
                 {
@@ -106,38 +113,50 @@
 
                 var tsvRow = TitleTsvRow.FromLine(line);
 
-                var dbRow = new TitleDbRow
+                try
                 {
-                    TitleId = tsvRow.TitleId,
-                    TitleType = tsvRow.TitleType,
-                    PrimaryTitle = tsvRow.PrimaryTitle,
-                    OriginalTitle = tsvRow.OriginalTitle,
-                    IsAdult = tsvRow.IsAdult == "1" ? 1 : 0,
-                    StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
-                        ? (int?)null
-                        : Convert.ToInt32(tsvRow.StartYear),
-                    EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
-                        ? (int?)null
-                        : Convert.ToInt32(tsvRow.EndYear),
-                    RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
-                        ? (int?)null
-                        : Convert.ToInt32(tsvRow.RuntimeMinutes),
-                    GenresCsv = tsvRow.GenresArray
-                };
+                    var dbRow = new TitleDbRow
+                    {
+                        TitleId = tsvRow.TitleId,
+                        TitleType = tsvRow.TitleType,
+                        PrimaryTitle = tsvRow.PrimaryTitle,
+                        OriginalTitle = tsvRow.OriginalTitle,
+                        IsAdult = tsvRow.IsAdult == "1" ? 1 : 0,
+                        StartYear = ImdbNull.IsImdbNull(tsvRow.StartYear)
+                            ? (int?)null
+                            : Convert.ToInt32(tsvRow.StartYear),
+                        EndYear = ImdbNull.IsImdbNull(tsvRow.EndYear)
+                            ? (int?)null
+                            : Convert.ToInt32(tsvRow.EndYear),
+                        RuntimeMinutes = ImdbNull.IsImdbNull(tsvRow.RuntimeMinutes)
+                            ? (int?)null
+                            : Convert.ToInt32(tsvRow.RuntimeMinutes),
+                        GenresCsv = tsvRow.GenresArray
+                    };
 
-                var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
-                var insert = commandFactory.CreateCommand(insertSql,
-                                                          dbRow.TitleId,
-                                                          dbRow.TitleType ?? "",
-                                                          dbRow.PrimaryTitle,
-                                                          dbRow.OriginalTitle,
-                                                          dbRow.IsAdult,
-                                                          dbRow.StartYear,
-                                                          dbRow.EndYear,
-                                                          dbRow.RuntimeMinutes,
-                                                          dbRow.GenresCsv);
+                    var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
+                    var insert = commandFactory.CreateCommand(insertSql,
+                                                              dbRow.TitleId,
+                                                              dbRow.TitleType ?? "",
+                                                              dbRow.PrimaryTitle,
+                                                              dbRow.OriginalTitle,
+                                                              dbRow.IsAdult,
+                                                              dbRow.StartYear,
+                                                              dbRow.EndYear,
+                                                              dbRow.RuntimeMinutes,
+                                                              dbRow.GenresCsv);
 
-                return insert;
+                    return insert;
+                }
+                catch (Exception)
+                {
+                    using var scope = new ConsoleScope();
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Bad input row!");
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine(tsvRow);
+                    throw;
+                }
             });
 
             var insertHandler = commandHandlerFactory.Build();
