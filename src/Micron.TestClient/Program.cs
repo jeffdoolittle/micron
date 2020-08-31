@@ -102,7 +102,7 @@
             using var fs = titlesFile.OpenRead();
             using var rdr = new StreamReader(fs);
 
-            var tsvRows = rdr.ReadLines().Where(line => line != null).Skip(1);
+            var tsvRows = rdr.ReadLinesAsync().Where(line => line != null).Skip(1);
             var lineCount = 0;
 
             var commands = tsvRows.Select(line =>
@@ -138,7 +138,7 @@
                     var insertSql = $"insert into title_basics values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
                     var insert = commandFactory.CreateCommand(insertSql,
                                                               dbRow.TitleId,
-                                                              dbRow.TitleType ?? "",
+                                                              dbRow.TitleType,
                                                               dbRow.PrimaryTitle,
                                                               dbRow.OriginalTitle,
                                                               dbRow.IsAdult,
@@ -162,7 +162,7 @@
             });
 
             var insertHandler = commandHandlerFactory.Build();
-            insertHandler.Batch(commands, 100000);
+            await insertHandler.BatchAsync(commands, 100000);
 
             Console.WriteLine($"Lines: {lineCount}");
 

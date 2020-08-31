@@ -360,3 +360,4 @@ lcov.info
 *.gz
 
 file:*
+*.sqlite
