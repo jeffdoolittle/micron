@@ -65,13 +65,12 @@
             var cst = new CancellationTokenSource();
             var ct = cst.Token;
 
-            var logger = services.GetService<ILogger<IDbCommandHandler>>();
+            var logger = services.GetService<ILogger<IMicronCommandHandler>>();
 
             var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=file:memdb1?mode=memory&cache=shared"));
             var commandFactory = new MicronCommandFactory();
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
-            var dbCommandHandlerFactory = new DbCommandHandlerFactory(retry, logger);
-            var commandHandlerFactory = new MicronCommandHandlerFactory(connectionFactory, dbCommandHandlerFactory);
+            var commandHandlerFactory = new MicronCommandHandlerFactory(retry, logger, connectionFactory);
             var handler = commandHandlerFactory.Build();
 
             var script = new SQLiteSchemaBuilder().CreateTables();
