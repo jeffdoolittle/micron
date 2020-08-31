@@ -162,7 +162,7 @@
             });
 
             var insertHandler = commandHandlerFactory.Build();
-            insertHandler.Batch(commands, 10000);
+            insertHandler.Batch(commands, 1000);
 
             Console.WriteLine($"Lines: {lineCount}");
 
