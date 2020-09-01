@@ -3,40 +3,39 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Linq;
+    using System.Threading;
 
     public class MicronCommandFactory : IMicronCommandFactory
     {
-        // private static readonly MicronCommandCache Cache =
-        //     new MicronCommandCache();
+        private static readonly ReaderWriterLockSlim CacheLock =
+            new ReaderWriterLockSlim();
 
-        private readonly string defaultParameterPrefix;
+        private static readonly IDictionary<string, MicronCommand> Cache =
+            new Dictionary<string, MicronCommand>();
 
-        public MicronCommandFactory() : this("@")
-        {
-        }
+        private readonly string defaultParameterPrefix = "@";
+
+        public MicronCommandFactory() : this("@") { }
 
         public MicronCommandFactory(string defaultParameterPrefix = "@") =>
             this.defaultParameterPrefix = defaultParameterPrefix;
 
         public MicronCommand CreateCommand(string commandText,
-            params object?[] parameters) =>
-                this.CreateCommand(commandText, _ =>
-                    {
-                        for (var p = 0; p < parameters.Length; p++)
-                        {
-                            _ = _.InParameter($"{this.defaultParameterPrefix}{p}",
-                                parameters[p]);
-                        }
-                    });
+            params string[] parameterNames) =>
+                this.CreateCommand(commandText, parameterNames.Select((x, i) => new
+                {
+                    Name = $"{this.defaultParameterPrefix}{i}",
+                    Type = typeof(object)
+                }).ToDictionary(x => x.Name, x => x.Type));
 
         public MicronCommand CreateCommand(string commandText,
-            IDictionary<string, object> parameters) =>
+            IDictionary<string, Type> parameterNamesAndTypes) =>
                 this.CreateCommand(commandText, _ =>
                 {
-                    foreach (var p in parameters)
+                    foreach (var kv in parameterNamesAndTypes)
                     {
-                        _ = _.InParameter(p.Key,
-                            p.Value);
+                        _ = _.InParameter(kv.Key, kv.Value);
                     }
                 });
 
@@ -48,45 +47,62 @@
             Action<IMicronCommandFactoryParameterExpression> parameterExpression,
             Action<IMicronCommandFactoryExpression>? configure)
         {
-            var command = new MicronCommand
-            {
-                CommandText = commandText
-            };
+            var parameterBuilder = new ParameterBuilder();
+            parameterExpression(parameterBuilder);
+            var parameters = parameterBuilder.Parameters;
 
-            if (configure != null)
+            var commandConfiguration = new CommandConfiguration();
+            configure?.Invoke(commandConfiguration);
+
+            try
             {
-                var configurer = new CommandConfigurer(command);
-                configure(configurer);
+                CacheLock.EnterUpgradeableReadLock();
+
+                var hash = MicronCommand.GetHash(commandText, commandConfiguration.CommandType,
+                    parameters);
+
+                if (Cache.ContainsKey(hash))
+                {
+                    return Cache[hash];
+                }
+
+                CacheLock.EnterWriteLock();
+
+                var command = new MicronCommand(commandText,
+                    commandConfiguration.CommandType,
+                    commandConfiguration.TimeoutSeconds,
+                    parameters.ToArray());
+
+                Cache[hash] = command;
+
+                return command;
             }
-
-            var builder = new ParameterBuilder();
-            parameterExpression(builder);
-            builder.Parameters.ForEach(p => command.Parameters.Add(p));
-
-            return command;
+            finally
+            {
+                CacheLock.ExitWriteLock();
+                CacheLock.ExitReadLock();
+            }
         }
 
-        private class CommandConfigurer : IMicronCommandFactoryExpression
+        private class CommandConfiguration : IMicronCommandFactoryExpression
         {
-            private readonly MicronCommand command;
-            public CommandConfigurer(MicronCommand command) =>
-                this.command = command;
-
             public void Configure(int commandTimeoutSeconds = 5, CommandType commandType = CommandType.Text)
             {
-                this.command.CommandTimeoutSeconds = commandTimeoutSeconds;
-                this.command.CommandType = commandType;
+                this.TimeoutSeconds = commandTimeoutSeconds;
+                this.CommandType = commandType;
             }
+
+            public int TimeoutSeconds { get; private set; } = 10;
+            public CommandType CommandType { get; private set; } = CommandType.Text;
         }
 
         private class ParameterBuilder : IMicronCommandFactoryParameterExpression
         {
-            public List<MicronParameter> Parameters { get; } =
-                new List<MicronParameter>();
+            private readonly List<MicronParameter> parameters = new List<MicronParameter>();
+            public MicronParameter[] Parameters => this.parameters.ToArray();
 
             private IMicronCommandFactoryParameterExpression Parameter(
                 string name,
-                object? value,
                 Type valueType,
                 ParameterDirection direction,
                 Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null)
@@ -98,7 +114,6 @@
                 {
                     Direction = direction,
                     Name = name,
-                    Value = value,
                     DataType = parameterDataType,
                     IsNullable = MicronTypeMap.Instance.IsNullable(valueType)
                 };
@@ -109,31 +124,26 @@
                     configure(configurer);
                 }
 
-                this.Parameters.Add(parameter);
+                this.parameters.Add(parameter);
 
                 return this;
             }
 
-            public IMicronCommandFactoryParameterExpression InParameter(string name,
-                object? value,
-                Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null)
-            {
-                var valueType = value?.GetType() ?? typeof(object);
-                return this.Parameter(name, value, valueType, ParameterDirection.Input, configure);
-            }
+            public IMicronCommandFactoryParameterExpression InParameter(string name, Type? valueType = null,
+                Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null) =>
+                    this.Parameter(name, valueType ?? typeof(object), ParameterDirection.Input, configure);
 
             public IMicronCommandFactoryParameterExpression InParameter<T>(string name,
-                T value,
                 Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null) =>
-                    this.Parameter(name, value, typeof(T), ParameterDirection.Input, configure);
+                    this.Parameter(name, typeof(T), ParameterDirection.Input, configure);
 
             public IMicronCommandFactoryParameterExpression OutParameter<T>(string name,
                 Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null) =>
-                    this.Parameter(name, null, typeof(T), ParameterDirection.Output, configure);
+                    this.Parameter(name, typeof(T), ParameterDirection.Output, configure);
 
             public IMicronCommandFactoryParameterExpression ReturnParameter<T>(string name,
                 Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null) =>
-                    this.Parameter(name, null, typeof(T), ParameterDirection.ReturnValue, configure);
+                    this.Parameter(name, typeof(T), ParameterDirection.ReturnValue, configure);
         }
 
         private class ParameterConfigurer : IMicronCommandFactoryParameterConfigurationExpression

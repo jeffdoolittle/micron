@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data.SQLite;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Net.Http;
@@ -23,6 +24,10 @@
         public static async Task<int> Main(string[] args)
         {
             using var scope = new ConsoleScope();
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"[ Process Id: {Process.GetCurrentProcess().Id} ]");
+            Console.ResetColor();
 
             var serviceCollection = new ServiceCollection();
             _ = serviceCollection.AddLogging(cfg =>
@@ -73,6 +78,9 @@
             // load data to sqlite database
             ////////////////////
 
+            var sw = new Stopwatch();
+            sw.Start();
+
             var cst = new CancellationTokenSource();
             var ct = cst.Token;
 
@@ -80,7 +88,7 @@
 
             var connectionStringBuilder = new SQLiteConnectionStringBuilder("Data Source=imdb.sqlite")
             {
-                JournalMode = SQLiteJournalModeEnum.Memory
+                JournalMode = SQLiteJournalModeEnum.Off
             };
             var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), connectionStringBuilder);
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
@@ -106,7 +114,8 @@
                         .Append(col.IsNullable ? "" : " NOT NULL")
                         ;
 
-                    return sb.ToString();;
+                    return sb.ToString();
+                    ;
                 });
 
             var script = new SQLiteSchemaBuilder().CreateTable(tableName<TitleBasicsDbRow>(), columns);
@@ -115,7 +124,8 @@
 
             _ = await handler.ExecuteAsync(micronCommand, ct);
 
-            Console.WriteLine("Executed ddl.");
+            Console.WriteLine($"Executed ddl in {sw.Elapsed}.");
+            sw.Restart();
 
             var titlesFile = new FileInfo("title.basics.tsv");
             using var fs = titlesFile.OpenRead();
@@ -151,10 +161,13 @@
                 return insert;
             });
 
-            var insertHandler = commandHandlerFactory.Build();
-            await insertHandler.BatchAsync(commands, 5, ct);
+            Console.WriteLine($"Prepared command enumerable in {sw.Elapsed}.");
+            sw.Restart();
 
-            Console.WriteLine($"Lines: {lineCount}");
+            var insertHandler = commandHandlerFactory.Build();
+            await insertHandler.BatchAsync(commands, 100000, ct);
+
+            Console.WriteLine($"Lines: {lineCount} in {sw.Elapsed}");
 
             return 0;
         }

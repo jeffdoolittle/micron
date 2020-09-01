@@ -3,6 +3,7 @@ namespace Micron
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
@@ -22,14 +23,18 @@ namespace Micron
         public void Batch(IEnumerable<MicronCommand> commands, int batchSize,
             Action<int, int>? batchIndexAndAffectedCallback = null)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             this.logger.LogDebug("Executing batch.");
 
             void callback(int batchIndex, int affectedCount)
             {
                 batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount);
 
-                this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows.",
-                    batchIndex, affectedCount);
+                this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows in {Elapsed}.",
+                    batchIndex, affectedCount, sw.Elapsed);
+                sw.Restart();
             }
 
             this.inner.Batch(commands, batchSize, callback);
@@ -39,14 +44,18 @@ namespace Micron
             CancellationToken ct = default,
             Func<int, int, Task>? batchIndexAndAffectedCallback = null)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             this.logger.LogDebug("Executing batch.");
 
             async Task callback(int batchIndex, int affectedCount)
             {
                 await (batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount) ?? Task.CompletedTask);
 
-                this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows.",
-                    batchIndex, affectedCount);
+                this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows in {Elapsed}.",
+                    batchIndex, affectedCount, sw.Elapsed);
+                sw.Restart();
             }
 
             await this.inner.BatchAsync(commands, batchSize, ct, callback)

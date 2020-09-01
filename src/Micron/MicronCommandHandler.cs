@@ -198,19 +198,23 @@ namespace Micron
 
             var batchIndex = 0;
 
+            var dbCommands = Enumerable.Range(0, batchSize)
+                .Select(_ => conn.CreateCommand());
+
+            var dbCommand = conn.CreateCommand();
+
             var batch = new List<DbCommand>();
             var batchAffected = 0;
             await foreach (var cmd in commands)
             {
-                var dbCommand = conn.CreateCommand();
                 cmd.MapTo(dbCommand);
                 batch.Add(dbCommand);
 
                 if (batch.Count == batchSize)
                 {
-                    await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) => { batchAffected += x; return Task.CompletedTask; }, ct);
+                    // await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) => { batchAffected += x; return Task.CompletedTask; }, ct);
+                    batchAffected = batch.Count;
                     await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
-                    batch.ForEach(cmd => cmd.Dispose());
                     batch.Clear();
                     batchAffected = 0;
                     batchIndex++;
@@ -221,7 +225,6 @@ namespace Micron
             {
                 await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) => { batchAffected += x; return Task.CompletedTask; }, ct);
                 await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
-                batch.ForEach(cmd => cmd.Dispose());
                 batch.Clear();
             }
 

@@ -7,10 +7,10 @@ namespace Micron
     public interface IMicronCommandFactory
     {
         MicronCommand CreateCommand(string commandText,
-            params object[] parameters);
+            params string[] parameterNames);
 
         MicronCommand CreateCommand(string commandText,
-            IDictionary<string, object> parameters);
+            IDictionary<string, Type> parameterNamesAndTypes);
 
         MicronCommand CreateCommand(string commandText,
             Action<IMicronCommandFactoryParameterExpression> parameters);
@@ -27,9 +27,9 @@ namespace Micron
 
     public interface IMicronCommandFactoryParameterExpression
     {
-        IMicronCommandFactoryParameterExpression InParameter(string name, object? value,
+        IMicronCommandFactoryParameterExpression InParameter(string name, Type? valueType = null,
             Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null);
-        IMicronCommandFactoryParameterExpression InParameter<T>(string name, T value,
+        IMicronCommandFactoryParameterExpression InParameter<T>(string name,
             Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null);
         IMicronCommandFactoryParameterExpression OutParameter<T>(string name,
             Action<IMicronCommandFactoryParameterConfigurationExpression>? configure = null);
