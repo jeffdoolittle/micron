@@ -78,7 +78,11 @@
 
             var logger = services.GetService<ILogger<IMicronCommandHandler>>();
 
-            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), new SQLiteConnectionStringBuilder("Data Source=imdb.sqlite"));
+            var connectionStringBuilder = new SQLiteConnectionStringBuilder("Data Source=imdb.sqlite")
+            {
+                JournalMode = SQLiteJournalModeEnum.Memory
+            };
+            var connectionFactory = DbConnectionFactory.Create(new SQLiteFactory(), connectionStringBuilder);
             var retry = RetryHandler.Catch<SQLiteException>().Retry(3, _ => _.Interval(tries => tries * tries * BackoffInterval.MinBackoffMilliseconds));
             var commandHandlerFactory = new MicronCommandHandlerFactory(retry, logger, connectionFactory);
 
@@ -96,10 +100,13 @@
                         _ => "TEXT"
                     };
 
-                    var pk = col.IsPrimaryKey ? " PRIMARY KEY" : "";
-                    var nul = col.IsNullable ? "" : " NOT NULL";
+                    var sb = new StringBuilder()
+                        .Append($"{col.Name} {dataType}")
+                        .Append(col.IsPrimaryKey ? " PRIMARY KEY" : "")
+                        .Append(col.IsNullable ? "" : " NOT NULL")
+                        ;
 
-                    return $"{col.Name} {dataType} {pk}{nul}";
+                    return sb.ToString();;
                 });
 
             var script = new SQLiteSchemaBuilder().CreateTable(tableName<TitleBasicsDbRow>(), columns);
@@ -109,7 +116,6 @@
             _ = await handler.ExecuteAsync(micronCommand, ct);
 
             Console.WriteLine("Executed ddl.");
-
 
             var titlesFile = new FileInfo("title.basics.tsv");
             using var fs = titlesFile.OpenRead();
@@ -128,7 +134,6 @@
                 var tsvRow = TitleTsvRow.FromLine(line);
 
                 var dbRow = TitleBasicsDbRow.From(tsvRow);
-
 
                 var insertSql = $"insert into {tableName<TitleBasicsDbRow>()} values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
                 var insert = commandFactory.CreateCommand(insertSql,
@@ -162,7 +167,7 @@
             var sb = new StringBuilder();
             _ = sb
                 .Append($"CREATE TABLE IF NOT EXISTS {tableName} (")
-                .Append(string.Join(",", columns))
+                .Append(string.Join(", ", columns))
                 .Append(") WITHOUT ROWID;");
 
             return sb.ToString();

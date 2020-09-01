@@ -121,6 +121,7 @@
             catch (Exception)
             {
                 transaction?.Rollback();
+                throw;
             }
             finally
             {
@@ -175,6 +176,7 @@
             catch (Exception)
             {
                 await (transaction?.RollbackAsync(ct) ?? Task.CompletedTask).ConfigureAwait(false);
+                throw;
             }
             finally
             {

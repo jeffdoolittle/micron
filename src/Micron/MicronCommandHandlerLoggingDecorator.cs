@@ -24,13 +24,12 @@ namespace Micron
         {
             this.logger.LogDebug("Executing batch.");
 
-
             void callback(int batchIndex, int affectedCount)
             {
+                batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount);
+
                 this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows.",
                     batchIndex, affectedCount);
-
-                batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount);
             }
 
             this.inner.Batch(commands, batchSize, callback);
@@ -42,12 +41,12 @@ namespace Micron
         {
             this.logger.LogDebug("Executing batch.");
 
-            Task callback(int batchIndex, int affectedCount)
+            async Task callback(int batchIndex, int affectedCount)
             {
+                await (batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount) ?? Task.CompletedTask);
+
                 this.logger.LogInformation("Executed batch {BatchIndex} affecting {Affected} rows.",
                     batchIndex, affectedCount);
-
-                return batchIndexAndAffectedCallback?.Invoke(batchIndex, affectedCount) ?? Task.CompletedTask;
             }
 
             await this.inner.BatchAsync(commands, batchSize, ct, callback)

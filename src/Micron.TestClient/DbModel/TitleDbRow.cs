@@ -93,7 +93,7 @@ namespace Micron.TestClient.DbModel
             {
                 Name = StringFns.ToSnakeCase(nameof(RuntimeMinutes)),
                 RuntimeType = typeof(int),
-                IsNullable = false
+                IsNullable = true
             };
             yield return new TableColumn
             {
