@@ -5,6 +5,7 @@ namespace Micron
     using System.Data;
     using System.Data.Common;
     using System.Linq;
+    using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -234,6 +235,43 @@ namespace Micron
             }
 
             await conn.CloseAsync();
+        }
+    }
+
+    public static class AsyncEnumerableExtensions
+    {
+        private class Indexed<T>
+        {
+            public Indexed(T item, int index)
+            {
+                this.Index = index;
+                this.Item = item;
+            }
+
+            public T Item { get; }
+            public int Index { get; }
+
+            public static ValueTask<Indexed<T>> AsValueTask(T item, int index) =>
+                new ValueTask<Indexed<T>>(new Indexed<T>(item, index));
+        }
+
+        public static async IAsyncEnumerable<IAsyncEnumerable<T>> InSetsOf<T>(this IAsyncEnumerable<T> source,
+            int setSize,
+            [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            var sets = source.SelectAwait((x, i) => Indexed<T>.AsValueTask(x, i))
+                .GroupByAwaitWithCancellation((x, t) => new ValueTask<int>(x.Index / setSize))
+                .SelectAwait(g => new ValueTask<IAsyncEnumerable<T>>(g.SelectAwait(x => new ValueTask<T>(x.Item))));
+
+            await foreach(var set in sets)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                yield return set;
+            }
         }
     }
 }
