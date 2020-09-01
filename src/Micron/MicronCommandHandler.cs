@@ -198,40 +198,25 @@ namespace Micron
             await conn.OpenAsync(ct);
 
             var batchIndex = 0;
-
-            var batch = new List<DbCommand>();
-            var batchAffected = 0;
-            await foreach (var cmd in commands)
+            await foreach (var set in commands.InSetsOf(batchSize))
             {
-                var dbCommand = conn.CreateCommand();
-                cmd.MapTo(dbCommand);
-                batch.Add(dbCommand);
+                var batchAffected = 0;
+                var batch = await set
+                    .SelectAwait(command=>
+                    {
+                        var dbCommand = conn.CreateCommand();
+                        command.MapTo(dbCommand);
+                        return new ValueTask<DbCommand>(dbCommand);
+                    })
+                    .ToArrayAsync();
 
-                if (batch.Count == batchSize)
+                await this.dbCommandHandler.TransactionAsync(batch, (i, x) =>
                 {
-                    await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) =>
-                    {
-                        batchAffected += x;
-                        return Task.CompletedTask;
-                    });
-                    await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
-                    batch.ForEach(async cmd => await cmd.DisposeAsync());
-                    batch.Clear();
-                    batchAffected = 0;
-                    batchIndex++;
-                }
-            }
-
-            if (batch.Count > 0)
-            {
-                await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) =>
-                    {
-                        batchAffected += x;
-                        return Task.CompletedTask;
-                    });
-                await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
-                batch.ForEach(async cmd => await cmd.DisposeAsync());
-                batch.Clear();
+                    batchAffected += x;
+                    return Task.CompletedTask;
+                });
+                await (batchIndexAndAffectedCallback?.Invoke(batchIndex++, batchAffected) ?? Task.CompletedTask);
+                await Task.WhenAll(batch.Select(cmd => cmd.DisposeAsync().AsTask()));
             }
 
             await conn.CloseAsync();
@@ -263,7 +248,7 @@ namespace Micron
                 .GroupByAwaitWithCancellation((x, t) => new ValueTask<int>(x.Index / setSize))
                 .SelectAwait(g => new ValueTask<IAsyncEnumerable<T>>(g.SelectAwait(x => new ValueTask<T>(x.Item))));
 
-            await foreach(var set in sets)
+            await foreach (var set in sets)
             {
                 if (ct.IsCancellationRequested)
                 {
