@@ -9,6 +9,5 @@ nuget System.Data.SqlClient 4.8.2
 nuget System.Data.SQLite
 nuget System.Data.SQLite.Core 1.0.113.1
 nuget System.Linq.Async 4.1.1
-nuget System.Threading.Channels
 nuget xunit 2.4.1
 nuget xunit.runner.visualstudio 2.4.2
