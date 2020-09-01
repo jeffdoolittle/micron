@@ -7,8 +7,6 @@
     using System.IO;
     using System.Linq;
     using System.Net.Http;
-    using System.Reflection;
-    using System.Runtime.Serialization;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -134,6 +132,9 @@
             var tsvRows = rdr.ReadLinesAsync().Where(line => line != null).Skip(1);
             var lineCount = 0;
 
+            var insertSql = $"insert into {tableName<TitleBasicsDbRow>()} values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
+            var tableBasicsInsertCommand = commandFactory.CreateCommand(insertSql);
+
             var commands = tsvRows.Select(line =>
             {
                 if (line == null)
@@ -146,16 +147,7 @@
                 var dbRow = TitleBasicsDbRow.From(tsvRow);
 
                 var insertSql = $"insert into {tableName<TitleBasicsDbRow>()} values (@0, @1, @2, @3, @4, @5, @6, @7, @8)";
-                var insert = commandFactory.CreateCommand(insertSql,
-                                                          dbRow.TitleId,
-                                                          dbRow.TitleType,
-                                                          dbRow.PrimaryTitle,
-                                                          dbRow.OriginalTitle,
-                                                          dbRow.IsAdult,
-                                                          dbRow.StartYear,
-                                                          dbRow.EndYear,
-                                                          dbRow.RuntimeMinutes,
-                                                          dbRow.GenresCsv);
+                var insert = commandFactory.CreateCommand(insertSql);
 
                 lineCount++;
                 return insert;

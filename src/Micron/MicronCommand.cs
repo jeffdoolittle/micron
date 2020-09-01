@@ -30,7 +30,7 @@ namespace Micron
 
         public MicronParameter[] Parameters { get; }
 
-        public void MapTo(DbCommand command, params object[] values)
+        public void MapTo(DbCommand command, object[] values)
         {
             command.CommandText = this.CommandText;
             command.CommandType = this.CommandType;

@@ -212,7 +212,7 @@ namespace Micron
 
                 if (batch.Count == batchSize)
                 {
-                    // await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) => { batchAffected += x; return Task.CompletedTask; }, ct);
+                    await this.dbCommandHandler.TransactionAsync(batch.ToArray(), (i, x) => { batchAffected += x; return Task.CompletedTask; }, ct);
                     batchAffected = batch.Count;
                     await (batchIndexAndAffectedCallback?.Invoke(batchIndex, batchAffected) ?? Task.CompletedTask);
                     batch.Clear();
