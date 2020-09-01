@@ -1,1 +1,5 @@
 System.Linq.Async
+System.Threading.Channels
+Microsoft.Extensions.DependencyInjection
+Microsoft.Extensions.Logging.Abstractions
+Microsoft.Extensions.Logging.Console

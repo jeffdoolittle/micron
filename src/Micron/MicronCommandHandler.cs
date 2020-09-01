@@ -7,6 +7,7 @@ namespace Micron
     using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Threading;
+    using System.Threading.Channels;
     using System.Threading.Tasks;
 
     public class MicronCommandHandler : IMicronCommandHandler
@@ -194,69 +195,84 @@ namespace Micron
             CancellationToken ct = default,
             Func<int, int, Task>? batchIndexAndAffectedCallback = null)
         {
+            var queueOptions = new BoundedChannelOptions(batchSize)
+            {
+                FullMode = BoundedChannelFullMode.Wait,
+                SingleReader = true,
+                SingleWriter = true
+            };
+
+            var micronCommandQueue = Channel.CreateBounded<MicronCommand>(queueOptions);
+
+            var micronCommandWriter = micronCommandQueue.Writer;
+
+            await foreach(var command in commands)
+            {
+                await micronCommandWriter.WriteAsync(command, ct).ConfigureAwait(false);
+            }
+
+            micronCommandWriter.Complete();
+
+            var dbCommandQueue = Channel.CreateUnbounded<DbCommand>();
+
+            var dbCommandQueueWriter = dbCommandQueue.Writer;
+
+            var micronCommandReader = micronCommandQueue.Reader;
+
             await using var conn = this.dbConnectionFactory.CreateConnection();
-            await conn.OpenAsync(ct);
+            await conn.OpenAsync(ct).ConfigureAwait(false);
 
-            var batchIndex = 0;
-            await foreach (var set in commands.InSetsOf(batchSize))
+            while (!micronCommandReader.Completion.IsCompleted)
             {
-                var batchAffected = 0;
-                var batch = await set
-                    .SelectAwait(command=>
-                    {
-                        var dbCommand = conn.CreateCommand();
-                        command.MapTo(dbCommand);
-                        return new ValueTask<DbCommand>(dbCommand);
-                    })
-                    .ToArrayAsync();
-
-                await this.dbCommandHandler.TransactionAsync(batch, (i, x) =>
-                {
-                    batchAffected += x;
-                    return Task.CompletedTask;
-                });
-                await (batchIndexAndAffectedCallback?.Invoke(batchIndex++, batchAffected) ?? Task.CompletedTask);
-                await Task.WhenAll(batch.Select(cmd => cmd.DisposeAsync().AsTask()));
+                var dbCommand = conn.CreateCommand();
+                var command = await micronCommandReader.ReadAsync(ct);
+                command.MapTo(dbCommand);
+                await dbCommandQueueWriter.WriteAsync(dbCommand, ct).ConfigureAwait(false);
             }
 
-            await conn.CloseAsync();
-        }
-    }
+            dbCommandQueueWriter.Complete();
 
-    public static class AsyncEnumerableExtensions
-    {
-        private class Indexed<T>
-        {
-            public Indexed(T item, int index)
+            var dbCommandQueueReader = dbCommandQueue.Reader;
+
+            do
             {
-                this.Index = index;
-                this.Item = item;
-            }
+                var batch = new List<DbCommand>(batchSize);
 
-            public T Item { get; }
-            public int Index { get; }
+                dbCommandQueueReader.ReadAllAsync();
 
-            public static ValueTask<Indexed<T>> AsValueTask(T item, int index) =>
-                new ValueTask<Indexed<T>>(new Indexed<T>(item, index));
-        }
 
-        public static async IAsyncEnumerable<IAsyncEnumerable<T>> InSetsOf<T>(this IAsyncEnumerable<T> source,
-            int setSize,
-            [EnumeratorCancellation] CancellationToken ct = default)
-        {
-            var sets = source.SelectAwait((x, i) => Indexed<T>.AsValueTask(x, i))
-                .GroupByAwaitWithCancellation((x, t) => new ValueTask<int>(x.Index / setSize))
-                .SelectAwait(g => new ValueTask<IAsyncEnumerable<T>>(g.SelectAwait(x => new ValueTask<T>(x.Item))));
-
-            await foreach (var set in sets)
-            {
-                if (ct.IsCancellationRequested)
+                if (dbCommandQueueReader.Completion.IsCompleted)
                 {
                     break;
                 }
+            } while(true);
 
-                yield return set;
-            }
+            // await using var conn = this.dbConnectionFactory.CreateConnection();
+            // await conn.OpenAsync(ct);
+
+            // var batchIndex = 0;
+            // await foreach (var set in commands.InSetsOf(batchSize))
+            // {
+            //     var batchAffected = 0;
+            //     var batch = await set
+            //         .SelectAwait(command=>
+            //         {
+            //             var dbCommand = conn.CreateCommand();
+            //             command.MapTo(dbCommand);
+            //             return new ValueTask<DbCommand>(dbCommand);
+            //         })
+            //         .ToArrayAsync();
+
+            //     await this.dbCommandHandler.TransactionAsync(batch, (i, x) =>
+            //     {
+            //         batchAffected += x;
+            //         return Task.CompletedTask;
+            //     });
+            //     await (batchIndexAndAffectedCallback?.Invoke(batchIndex++, batchAffected) ?? Task.CompletedTask);
+            //     await Task.WhenAll(batch.Select(cmd => cmd.DisposeAsync().AsTask()));
+            // }
+
+            // await conn.CloseAsync();
         }
     }
 }
